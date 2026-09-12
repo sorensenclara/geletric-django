@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}GELETRIC · {{ module.name }}{% endblock %}
+
+{% block content %}
+<div class="module-view">
+  <a class="back-btn" href="{% url 'core:home' %}"><svg class="icon"><use href="#i-arrowleft"/></svg>Volver a Inicio</a>
+  <div class="module-head">
+    <img class="module-head-icon-img" src="{% static module.icon_tile %}" alt="">
+    <div>
+      <h2>{{ module.name }}</h2>
+      <p>{{ module.items|length }} funcionalidades — vista exploratoria</p>
+    </div>
+  </div>
+  <div class="module-items">
+    {% for item in items %}
+    {% if item.href %}
+    <a class="module-item module-item-link" href="{{ item.href }}"><span>{{ item.label }}</span><svg class="icon"><use href="#i-chevright"/></svg></a>
+    {% else %}
+    <div class="module-item"><span>{{ item.label }}</span><svg class="icon"><use href="#i-chevright"/></svg></div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

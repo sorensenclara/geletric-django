@@ -1,0 +1,28 @@
+databases:
+  - name: geletric-db
+    plan: free
+    databaseName: geletric
+    user: geletric
+
+services:
+  - type: web
+    name: geletric-django
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py ensure_admin"
+    startCommand: "gunicorn geletric.wsgi"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: geletric-db
+          property: connectionString
+      - key: DJANGO_ADMIN_USERNAME
+        sync: false
+      - key: DJANGO_ADMIN_PASSWORD
+        sync: false

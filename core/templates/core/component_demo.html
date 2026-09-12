@@ -1,0 +1,44 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}GELETRIC · Componentes{% endblock %}
+
+{% block content %}
+<div class="module-view">
+  <a class="back-btn" href="{% url 'core:home' %}"><svg class="icon"><use href="#i-arrowleft"/></svg>Volver a Inicio</a>
+
+  <div class="card card-pad">
+    <div class="card-head"><h3>Wizard — pasos de un proceso largo</h3></div>
+    <p class="ficha-note">Componente de ejemplo: todavía no hay ningún proceso multi-paso confirmado en el sistema. Cuando se defina el primero (por ejemplo, alta de asociado), se reutiliza este mismo componente con sus pasos y datos reales — acá se ve con datos de muestra.</p>
+
+    <div class="wizard">
+      {% for s in steps %}
+      <div class="wizard-step {{ s.state }}">
+        <span class="wizard-step-dot">{% if s.state == "done" %}<svg class="icon"><use href="#i-check"/></svg>{% else %}{{ forloop.counter }}{% endif %}</span>
+        <span class="wizard-step-label">{{ s.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <div class="card-head"><h3>Carteles de alerta (formularios y avisos)</h3></div>
+    <p class="ficha-note">Mismo componente reutilizable, en sus 3 variantes de estado.</p>
+
+    <div class="alert-banner critical">
+      <svg class="icon"><use href="#i-alert-bubble"/></svg>
+      <div><p>Usuario o contraseña incorrectos. Volvé a intentarlo.</p></div>
+    </div>
+
+    <div class="alert-banner warning">
+      <svg class="icon"><use href="#i-alert-bubble"/></svg>
+      <div><p>Hay campos sin completar en el paso anterior.</p></div>
+    </div>
+
+    <div class="alert-banner good">
+      <svg class="icon"><use href="#i-check"/></svg>
+      <div><p>Los cambios se guardaron correctamente.</p></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

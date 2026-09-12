@@ -1,0 +1,25 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}GELETRIC · {{ card.label }}{% endblock %}
+
+{% block content %}
+<div class="module-view">
+  <a class="back-btn" href="{% url 'core:module_detail' slug='asociados' %}"><svg class="icon"><use href="#i-arrowleft"/></svg>Volver a Asociados y servicios</a>
+
+  <div class="module-head">
+    <span class="asoc-menu-icon asoc-menu-icon-lg"><svg class="icon"><use href="#{{ card.icon }}"/></svg></span>
+    <div>
+      <h2>{{ card.label }}</h2>
+      <p>{{ card.description }}</p>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <div class="status-banner">
+      <svg class="icon"><use href="#i-wrench"/></svg>
+      <p>Esta pantalla todavía no tiene funcionalidad propia.<span>Se construye cuando se confirme su Historia de Usuario — por ahora, "Ficha del asociado" es la única con pantalla real.</span></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

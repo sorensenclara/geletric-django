@@ -1,0 +1,80 @@
+{% load static core_extras %}<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}GELETRIC{% endblock %}</title>
+<script>
+(function(){try{if(localStorage.getItem('geletric-brand-color')==='green'){document.documentElement.setAttribute('data-brand','green');}}catch(e){}})();
+</script>
+<link rel="stylesheet" href="{% static 'core/css/dashboard.css' %}">
+</head>
+<body>
+{% include "core/_icon_sprite.html" %}
+
+<div class="app">
+  <div class="scrim" id="scrim"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img class="brand-logo brand-logo-full" src="{% static 'core/images/SVG/Isologotipo GELETRIC white.svg' %}" alt="GELETRIC — software de gestión para cooperativas eléctricas">
+      <img class="brand-logo brand-logo-icon" src="{% static 'core/images/SVG/Iso GELETRIC.svg' %}" alt="GELETRIC">
+    </div>
+
+    <div class="sidebar-body">
+    <nav class="nav">
+      <a class="nav-item{% if active_slug == 'home' %} active{% endif %}" href="{% url 'core:home' %}">
+        <svg class="icon"><use href="#i-home"/></svg><span>Inicio</span>
+      </a>
+      {% for m in modules %}
+      <a class="nav-item{% if active_slug == m.slug %} active{% endif %}" href="{% url 'core:module_detail' slug=m.slug %}">
+        {% inline_icon m.icon_white "nav-icon-img" %}<span>{{ m.name }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="sidebar-divider"></div>
+      <button class="nav-item" type="button"><svg class="icon"><use href="#i-help"/></svg><span>Ayuda y soporte</span></button>
+      <div class="sidebar-divider"></div>
+      <div class="energy-bar"><span></span></div>
+      <div class="sidebar-meta"><b>GELETRIC v1.0.0</b><span>ENERGÍA QUE NOS UNE</span></div>
+    </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-btn" id="menu-btn" type="button" aria-label="Abrir menú"><svg class="icon"><use href="#i-menu"/></svg></button>
+      <label class="search">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="text" placeholder="Buscar asociado, suministro, factura, orden de trabajo…" />
+        <kbd>⌘K</kbd>
+      </label>
+      <div class="topbar-spacer"></div>
+      <div class="brand-picker" role="group" aria-label="Color del sistema">
+        <button class="brand-swatch brand-swatch-blue" type="button" data-brand="blue" aria-label="Azul" aria-pressed="true"></button>
+        <button class="brand-swatch brand-swatch-green" type="button" data-brand="green" aria-label="Verde" aria-pressed="false"></button>
+      </div>
+      <button class="icon-btn" type="button" aria-label="Notificaciones"><svg class="icon"><use href="#i-bell"/></svg><span class="badge-dot">3</span></button>
+      <button class="icon-btn" type="button" aria-label="Configuración"><svg class="icon"><use href="#i-gear"/></svg></button>
+      <button class="user-chip" type="button">
+        <span class="avatar">{{ request.user.username|slice:":2"|upper }}</span>
+        <span class="who"><b>{{ request.user.get_full_name|default:request.user.username }}</b><span>{% if request.user.is_superuser %}Administrador{% else %}Usuario{% endif %}</span></span>
+        <svg class="icon"><use href="#i-chevdown"/></svg>
+      </button>
+      <form method="post" action="{% url 'core:logout' %}" class="logout-form">
+        {% csrf_token %}
+        <button class="icon-btn" type="submit" aria-label="Cerrar sesión"><svg class="icon"><use href="#i-logout"/></svg></button>
+      </form>
+    </div>
+
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'core/js/dashboard.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

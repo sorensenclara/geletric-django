@@ -1,0 +1,82 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}GELETRIC · Listado de asociados{% endblock %}
+
+{% block content %}
+<div class="module-view">
+  <a class="back-btn" href="{% url 'core:module_detail' slug='asociados' %}"><svg class="icon"><use href="#i-arrowleft"/></svg>Volver a Asociados y servicios</a>
+
+  <div class="module-head">
+    <span class="asoc-menu-icon asoc-menu-icon-lg"><svg class="icon"><use href="#i-idcard"/></svg></span>
+    <div>
+      <h2>Listado de asociados</h2>
+      <p>Buscá un asociado para ver su ficha completa.</p>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <form method="get" class="list-toolbar">
+      <label class="list-search">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o N° de asociado…">
+      </label>
+      <select name="estado" class="list-select">
+        <option value="">Estado (todos)</option>
+        <option value="Activo"{% if estado_filter == "Activo" %} selected{% endif %}>Activo</option>
+        <option value="Inactivo"{% if estado_filter == "Inactivo" %} selected{% endif %}>Inactivo</option>
+      </select>
+      <select name="rol" class="list-select">
+        <option value="">Rol (todos)</option>
+        <option value="Asociado"{% if rol_filter == "Asociado" %} selected{% endif %}>Asociado</option>
+        <option value="Usuario"{% if rol_filter == "Usuario" %} selected{% endif %}>Usuario</option>
+        <option value="Proveedor"{% if rol_filter == "Proveedor" %} selected{% endif %}>Proveedor</option>
+      </select>
+      <select name="localidad" class="list-select">
+        <option value="">Localidad (todas)</option>
+        {% for loc in localidades %}
+        <option value="{{ loc }}"{% if localidad_filter == loc %} selected{% endif %}>{{ loc }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn-secondary" type="submit"><svg class="icon"><use href="#i-search"/></svg>Filtrar</button>
+      {% if q or estado_filter or rol_filter or localidad_filter %}
+      <a class="btn-secondary" href="{% url 'core:asociados_list' %}"><svg class="icon"><use href="#i-x"/></svg>Limpiar</a>
+      {% endif %}
+    </form>
+
+    <p class="list-count">Mostrando {{ asociados|length }} de {{ total_asociados }} asociados.</p>
+
+    {% if asociados %}
+    <div class="ficha-table-wrap">
+      <table class="ficha-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>N° asociado</th>
+            <th>Estado</th>
+            <th>Localidad</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in asociados %}
+          <tr>
+            <td>{{ a.nombre_completo }}</td>
+            <td>{{ a.numero_asociado }}</td>
+            <td><span class="status-pill{% if a.estado == "Activo" %} good{% else %} neutral{% endif %}">{{ a.estado }}</span></td>
+            <td>{{ a.localidad }}</td>
+            <td><a class="table-link" href="{% url 'core:asociado_ficha' numero_asociado=a.numero_asociado %}">Ver ficha<svg class="icon"><use href="#i-chevright"/></svg></a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="status-banner">
+      <svg class="icon"><use href="#i-users"/></svg>
+      <p>No se encontraron asociados con esos criterios.<span>Probá con otro nombre o número, o quitá algún filtro.</span></p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}GELETRIC · Inicio{% endblock %}
+
+{% block content %}
+<div class="home-view">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">Cooperativa San Manuel</div>
+      <h1>¡Hola, Juan!</h1>
+      <p>Te damos la bienvenida a GELETRIC. Este es un prototipo de diseño de alta fidelidad — los datos que ves son de ejemplo.</p>
+    </div>
+    <div class="date-pill">
+      <svg class="icon"><use href="#i-calendar"/></svg>
+      <b>{{ today_label }}</b>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    {% for s in stats %}
+    <div class="card stat-card">
+      <div class="stat-top">
+        <img class="stat-icon-img" src="{% static s.icon_tile %}" alt="">
+        <div class="stat-value">{{ s.value }}</div>
+      </div>
+      <div class="stat-label">{{ s.label }}</div>
+      <div class="stat-trend"><b><svg class="icon"><use href="#i-arrowup"/></svg>{{ s.trend }}</b> vs. mes anterior</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="row-2">
+    <div class="card card-pad">
+      <div class="card-head">
+        <h3>Evolución del consumo de energía</h3>
+        <div class="select-fake">Últimos 6 meses <svg class="icon"><use href="#i-chevdown"/></svg></div>
+      </div>
+      <div class="chart-legend"><span><i class="dot" style="background:var(--brand-blue)"></i>Consumo (MWh)</span></div>
+      <div class="chart-wrap" id="line-chart"></div>
+      <p class="chart-hint">Pasá el cursor sobre el gráfico para ver el detalle mensual.</p>
+    </div>
+
+    <div class="card card-pad">
+      <div class="card-head">
+        <h3>Estado de la red</h3>
+        <button class="link-btn" type="button">Ver en mapa <svg class="icon"><use href="#i-chevright"/></svg></button>
+      </div>
+      <div class="donut-wrap">
+        <div id="donut-chart"></div>
+        <div class="donut-legend">
+          {% for n in network %}
+          <div class="row"><i class="dot" style="background:var({{ n.var }})"></i>{{ n.label }}<b>{{ n.value }}</b></div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="status-banner">
+        <svg class="icon"><use href="#i-flag"/></svg>
+        <p>Servicio estable en toda la zona de cobertura.<span>Última actualización: hoy, {{ last_update_label }} hs.</span></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row-3">
+    <div class="card card-pad">
+      <div class="card-head"><h3>Tareas pendientes<span class="count">{{ tasks|length }}</span></h3><button class="link-btn" type="button">Ver todas <svg class="icon"><use href="#i-chevright"/></svg></button></div>
+      <div class="list">
+        {% for t in tasks %}
+        <div class="list-row">
+          <img class="list-icon-img" src="{% static t.icon_tile %}" alt="">
+          <div class="list-body"><div class="list-title">{{ t.title }}</div><div class="list-sub">{{ t.module_name }}</div></div>
+          <div class="list-due{% if t.urgent %} urgent{% endif %}">{{ t.due }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-head"><h3>Novedades</h3><button class="link-btn" type="button">Ver todas <svg class="icon"><use href="#i-chevright"/></svg></button></div>
+      <div class="list">
+        {% for n in news %}
+        <div class="list-row">
+          <img class="list-icon-img" src="{% static n.icon_tile %}" alt="">
+          <div class="list-body"><div class="list-title">{{ n.title }}</div><div class="list-sub">{{ n.module_name }}</div></div>
+          <div class="list-due">{{ n.when }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-head"><h3>Accesos rápidos</h3><button class="link-btn" type="button">Personalizar</button></div>
+      <div class="quick-grid">
+        {% for m in quick_access %}
+        <a class="quick-item" href="{% url 'core:module_detail' slug=m.slug %}">
+          <img class="quick-icon-img" src="{% static m.icon_tile %}" alt="">
+          <span>{{ m.name }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{{ chart_series|json_script:"consumo-data" }}
+{{ network|json_script:"network-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  Dashboard.initLineChart('consumo-data', 'line-chart');
+  Dashboard.initDonutChart('network-data', 'donut-chart');
+});
+</script>
+{% endblock %}

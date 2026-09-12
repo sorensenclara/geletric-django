@@ -1,0 +1,174 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}GELETRIC · Ficha del asociado{% endblock %}
+
+{% block content %}
+<div class="module-view">
+  <a class="back-btn" href="{% url 'core:asociados_list' %}"><svg class="icon"><use href="#i-arrowleft"/></svg>Volver al listado de asociados</a>
+
+  <div class="card card-pad ficha-card">
+
+    <div class="ficha-header">
+      <div class="ficha-id">
+        <span class="ficha-avatar">{{ associate.iniciales }}</span>
+        <div class="ficha-id-text">
+          <p class="ficha-kicker">Ficha del asociado</p>
+          <h2 class="ficha-name">{{ associate.nombre_completo }}</h2>
+          <p class="ficha-sub">Asociado N° {{ associate.numero_asociado }} &nbsp;|&nbsp; Usuario N° {{ associate.numero_usuario }}</p>
+          <div class="ficha-badges">
+            <span class="status-chip{% if associate.activo %} good{% else %} neutral{% endif %}"><i></i>{{ associate.estado }}</span>
+            {% if associate.es_asociado %}<span class="role-badge">Es asociado</span>{% endif %}
+            {% if associate.es_usuario %}<span class="role-badge">Es usuario</span>{% endif %}
+            <span class="role-badge{% if not associate.es_proveedor %} muted{% endif %}">Es proveedor</span>
+          </div>
+        </div>
+      </div>
+      <div class="ficha-actions">
+        <button class="btn-primary" type="button"><svg class="icon"><use href="#i-edit"/></svg>Editar asociado</button>
+        <button class="icon-btn" type="button" aria-label="Más acciones"><svg class="icon"><use href="#i-more"/></svg></button>
+      </div>
+    </div>
+
+    <div class="ficha-summary">
+      {% for r in associate.resumen %}
+      <div class="ficha-summary-tile">
+        <div class="ficha-summary-text">
+          <span class="ficha-summary-label">{{ r.label }}</span>
+          <span class="ficha-summary-value{% if r.kind == 'status' %} good{% endif %}">{{ r.value }}</span>
+        </div>
+        {% if r.chevron %}<svg class="icon ficha-summary-chevron"><use href="#i-chevright"/></svg>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="ficha-tabs" id="ficha-tabs" role="tablist">
+      {% for t in tabs %}
+      <button class="ficha-tab{% if t.dashed %} dashed{% endif %}{% if forloop.first %} active{% endif %}" type="button" data-tab="{{ t.id }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{ t.label }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="ficha-panels" id="ficha-panels">
+      {% for t in tabs %}
+      <div class="ficha-panel" data-panel="{{ t.id }}" role="tabpanel" {% if not forloop.first %}hidden{% endif %}>
+        {% if t.note %}<p class="ficha-note">{{ t.note }}</p>{% endif %}
+
+        {% if t.kind == "general" %}
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-card-head"><svg class="icon"><use href="#i-user"/></svg><h3>Datos personales</h3></div>
+            <div class="info-card-fields">
+              {% for f in associate.personal %}
+              <div class="info-field"><span class="info-label">{{ f.label }}</span><span class="info-value">{{ f.value }}</span></div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-head"><svg class="icon"><use href="#i-phone"/></svg><h3>Datos de contacto</h3></div>
+            <div class="info-card-fields">
+              {% for f in associate.contacto %}
+              <div class="info-field"><span class="info-label">{{ f.label }}</span><span class="info-value">{{ f.value }}</span></div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-head"><svg class="icon"><use href="#i-map"/></svg><h3>Domicilio</h3></div>
+            <div class="info-card-fields">
+              {% for f in associate.domicilio_general %}
+              <div class="info-field"><span class="info-label">{{ f.label }}</span><span class="info-value">{{ f.value }}</span></div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-head"><svg class="icon"><use href="#i-idcard"/></svg><h3>Información administrativa</h3></div>
+            <div class="info-card-fields">
+              {% for f in associate.administrativa %}
+              <div class="info-field"><span class="info-label">{{ f.label }}</span><span class="info-value">{{ f.value }}</span></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if t.kind == "fields" or t.kind == "fields_button" %}
+        <div class="info-card-fields info-card-fields-standalone">
+          {% for f in t.fields %}
+          <div class="info-field{% if f.disabled %} disabled{% endif %}"><span class="info-label">{{ f.label }}</span><span class="info-value">{{ f.value }}</span></div>
+          {% endfor %}
+        </div>
+        {% if t.kind == "fields_button" %}
+        <button class="btn-secondary" type="button"><svg class="icon"><use href="#i-file"/></svg>{{ t.button_label }}</button>
+        {% endif %}
+        {% endif %}
+
+        {% if t.kind == "table" %}
+        <div class="ficha-table-wrap">
+          <table class="ficha-table">
+            <thead><tr>{% for h in t.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+            <tbody>{% for row in t.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+          </table>
+        </div>
+        {% endif %}
+
+        {% if t.kind == "suministros" %}
+        <div class="entity-cards">
+          {% for it in t.items %}
+          <div class="entity-card">
+            <div class="entity-card-head">
+              <span class="entity-card-nis">NIS {{ it.nis }}</span>
+              <span class="status-chip{% if it.activo %} good{% else %} neutral{% endif %}"><i></i>{% if it.activo %}Activo{% else %}Inactivo{% endif %}</span>
+            </div>
+            <p class="entity-card-title">{{ it.tipo }}</p>
+            <p class="entity-card-sub">{{ it.direccion }}</p>
+            <a class="entity-card-action" href="#">Ver suministro <svg class="icon"><use href="#i-chevright"/></svg></a>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if t.kind == "reclamos" %}
+        <div class="ficha-table-wrap">
+          <table class="ficha-table">
+            <thead><tr>{% for h in t.headers %}<th>{{ h }}</th>{% endfor %}<th>Acción</th></tr></thead>
+            <tbody>
+              {% for it in t.items %}
+              <tr>
+                <td>{{ it.tipo }}</td>
+                <td>{{ it.descripcion }}</td>
+                <td>{{ it.fecha }}</td>
+                <td><span class="status-pill {{ it.estado_kind }}">{{ it.estado }}</span></td>
+                <td><a class="table-link" href="#">Ver <svg class="icon"><use href="#i-chevright"/></svg></a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+
+        {% if t.kind == "rows" %}
+        <div class="ficha-rows">
+          {% for r in t.items %}
+          <div class="ficha-row{% if t.dashed %} dashed{% endif %}"><span>{{ r.label }}</span>{% if r.value %}<span class="value">{{ r.value }}</span>{% endif %}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="info-alert">
+      <svg class="icon"><use href="#i-help"/></svg>
+      <p>Los datos se muestran en modo consulta. Para realizar modificaciones, hacé clic en <b>"Editar asociado"</b>.</p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  Dashboard.initTabs('#ficha-tabs', '#ficha-panels');
+});
+</script>
+{% endblock %}

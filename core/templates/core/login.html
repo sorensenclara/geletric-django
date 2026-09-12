@@ -1,0 +1,53 @@
+{% extends "core/base_auth.html" %}
+{% load static %}
+
+{% block title %}GELETRIC · Iniciar sesión{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+  <div class="auth-card">
+    <img class="auth-logo" src="{% static 'core/images/SVG/Isologotipo GELETRIC Color.svg' %}" alt="GELETRIC">
+    <h1 class="auth-title">Bienvenido a GELETRIC</h1>
+    <p class="auth-sub">Iniciá sesión para continuar con tu gestión.</p>
+
+    {% if form.non_field_errors %}
+    <div class="alert-banner critical">
+      <svg class="icon"><use href="#i-alert-bubble"/></svg>
+      <div>
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="post" class="auth-form" novalidate>
+      {% csrf_token %}
+
+      <label class="auth-field">
+        <span class="auth-field-label">Usuario</span>
+        <span class="auth-input-wrap{% if form.username.errors %} error{% endif %}">
+          <svg class="icon"><use href="#i-mail"/></svg>
+          {{ form.username }}
+        </span>
+        {% for error in form.username.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <label class="auth-field">
+        <span class="auth-field-label">Contraseña</span>
+        <span class="auth-input-wrap{% if form.password.errors %} error{% endif %}">
+          <svg class="icon"><use href="#i-lock"/></svg>
+          {{ form.password }}
+        </span>
+        {% for error in form.password.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <div class="auth-row">
+        <label class="auth-check"><input type="checkbox" name="remember"><span>Recordarme</span></label>
+        <a class="auth-link" href="#">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn-primary auth-submit" type="submit">Ingresar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

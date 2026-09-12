@@ -1,0 +1,32 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}GELETRIC · Asociados y servicios{% endblock %}
+
+{% block content %}
+<div class="module-view">
+  <a class="back-btn" href="{% url 'core:home' %}"><svg class="icon"><use href="#i-arrowleft"/></svg>Volver a Inicio</a>
+
+  <div class="module-head">
+    <img class="module-head-icon-img" src="{% static module.icon_tile %}" alt="">
+    <div>
+      <h2>{{ module.name }}</h2>
+      <p>Gestión de asociados, usuarios y servicios de la cooperativa.</p>
+    </div>
+    <a class="btn-secondary asoc-help-btn" href="#"><svg class="icon"><use href="#i-help"/></svg>Ayuda de este módulo<svg class="icon"><use href="#i-chevright"/></svg></a>
+  </div>
+
+  <div class="asoc-menu-grid">
+    {% for c in cards %}
+    <a class="asoc-menu-card" href="{% if c.slug == 'ficha' %}{% url 'core:asociados_list' %}{% else %}{% url 'core:asociado_sub' subslug=c.slug %}{% endif %}">
+      <span class="asoc-menu-icon"><svg class="icon"><use href="#{{ c.icon }}"/></svg></span>
+      <span class="asoc-menu-text">
+        <b>{{ c.label }}</b>
+        <span>{{ c.description }}</span>
+      </span>
+      <svg class="icon asoc-menu-chevron"><use href="#i-chevright"/></svg>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
