@@ -73,8 +73,8 @@ def module_detail(request, slug):
 
 def asociados_list(request):
     """Listado de asociados: paso previo a la ficha (buscador por nombre/N°
-    de asociado + filtros de estado/rol/localidad). Datos de muestra por
-    ahora — ver associate_data.get_asociados_list()."""
+    de asociado + filtros de estado/rol/localidad). Datos reales desde el
+    14/09/2026 — ver associate_data.get_asociados_list()."""
     q = request.GET.get("q", "").strip()
     estado = request.GET.get("estado", "")
     rol = request.GET.get("rol", "")
@@ -111,9 +111,13 @@ def asociados_list(request):
 def asociado_ficha(request, numero_asociado):
     """Ficha del asociado: ventana con encabezado, resumen y solapas,
     primera funcionalidad real del módulo Asociados y servicios. Se llega
-    acá eligiendo un asociado del listado (core:asociados_list). Datos de
-    muestra por ahora — ver associate_data.py."""
+    acá eligiendo un asociado del listado (core:asociados_list). Datos
+    reales desde el 14/09/2026 — ver associate_data.py. Si numero_asociado
+    no existe, 404 (antes, con datos de muestra, mostraba por error el
+    primer asociado de la lista)."""
     associate = ad.get_associate(numero_asociado)
+    if associate is None:
+        raise Http404("Asociado no encontrado")
     return render(request, "core/asociado_ficha.html", {
         "active_slug": "asociados",
         "module": get_module("asociados"),
@@ -124,10 +128,11 @@ def asociado_ficha(request, numero_asociado):
 
 def asociado_alta(request):
     """Alta de asociado (HU-ASO-01) — primer formulario del sistema con
-    persistencia real (ver core/models.py: Asociado). El listado y la
-    ficha (core:asociados_list, core:asociado_ficha) siguen mostrando
-    datos de muestra de associate_data.py hasta que su propia Historia de
-    Usuario quede cerrada: un alta hecha acá todavía no aparece ahí.
+    persistencia real (ver core/models.py: Asociado). Desde el 14/09/2026
+    el listado y la ficha (core:asociados_list, core:asociado_ficha)
+    también son reales: un alta hecha acá ya aparece ahí de inmediato,
+    igual que la suscripción de acciones que se registra acá (HU-ASO-02),
+    visible en la solapa "Suscripción" de la ficha.
 
     PREG-ASO-01 (bloqueante en la HU) sigue sin resolverse: el número de
     asociado/usuario se asigna con un correlativo simple, sin reutilizar
@@ -136,11 +141,20 @@ def asociado_alta(request):
         form = AsociadoAltaForm(request.POST)
         if form.is_valid():
             asociado = form.save()
-            messages.success(
-                request,
+            mensaje = (
                 f"Asociado N° {asociado.numero_asociado} (Usuario N° {asociado.numero_usuario}) "
-                f"creado correctamente.",
+                f"creado correctamente."
             )
+            if form.suscripcion:
+                s = form.suscripcion
+                mensaje += (
+                    f" Suscripción registrada: Título N° {s.numero_titulo}, "
+                    f"{s.cantidad_acciones} acciones, capital suscripto ${s.capital_suscripto}."
+                )
+                messages.success(request, mensaje)
+            else:
+                messages.success(request, mensaje)
+                messages.warning(request, form.suscripcion_error)
             return redirect("core:asociado_alta")
     else:
         form = AsociadoAltaForm()

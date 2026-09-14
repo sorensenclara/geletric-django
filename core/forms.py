@@ -16,7 +16,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 
-from .models import Asociado
+from .models import Asociado, SuscripcionAcciones
 from .validators import cuit_contiene_dni, cuit_valido, normalizar_numero, prefijo_cuit_coherente
 
 
@@ -190,12 +190,17 @@ class AsociadoAltaForm(forms.Form):
         return None
 
     def save(self):
+        """Además de crear el Asociado, registra su suscripción inicial de
+        acciones (HU-ASO-02, Escenario 1) en la misma transacción. Si no
+        hay valor nominal configurado para hoy (Escenario 6), el asociado
+        se crea igual y self.suscripcion queda en None con el motivo en
+        self.suscripcion_error — la vista decide qué mensaje mostrar."""
         cleaned = self.cleaned_data
         tipo_persona = cleaned["tipo_persona"]
         es_real = tipo_persona == Asociado.TIPO_PERSONA_REAL
 
         with transaction.atomic():
-            return Asociado.objects.create(
+            asociado = Asociado.objects.create(
                 numero_asociado=Asociado.siguiente_numero_asociado(),
                 numero_usuario=Asociado.siguiente_numero_usuario(),
                 tipo_persona=tipo_persona,
@@ -209,3 +214,5 @@ class AsociadoAltaForm(forms.Form):
                 condicion_iva=cleaned["condicion_iva"],
                 domicilio=cleaned["domicilio"],
             )
+            self.suscripcion, self.suscripcion_error = SuscripcionAcciones.registrar_para(asociado)
+            return asociado

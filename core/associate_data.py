@@ -1,159 +1,170 @@
 """
-Datos de ejemplo para el listado y la Ficha del asociado (módulo Asociados
-y servicios).
+Listado y Ficha del asociado (módulo Asociados y servicios).
 
-Boceto provisto por el equipo de desarrollo: una ficha con encabezado,
-resumen rápido y 8 solapas navegables. Dos de esas solapas (Familiares,
-Proveedor) están marcadas como "a confirmar" en el boceto original porque
-su origen de datos todavía no está cerrado — se muestran con un estilo
-distinto (borde punteado) para que quede claro que son tentativas.
+Hasta el 14/09/2026 este archivo era un directorio fijo de asociados de
+muestra (_ASOCIADOS_MUESTRA): ni el listado ni la ficha leían la base de
+datos. A pedido de Clara, get_asociados_list(), get_localidades() y
+get_associate(numero_asociado) ahora consultan el modelo real (core.models
+.Asociado, más SuscripcionAcciones para la solapa "Suscripción") — mismo
+patrón que seed_demo.py en el proyecto de San Cayetano: primero cargar
+datos reales, después conectar la pantalla a ellos.
 
-Nada de esto lee la base de datos todavía: es un directorio fijo de
-asociados de muestra (ver _ASOCIADOS_MUESTRA). Cuando la Historia de
-Usuario del listado/ficha quede cerrada, get_asociados_list() y
-get_associate(numero_asociado) son las funciones a reemplazar por consultas
-al ORM (con su paginación/búsqueda real) sin tocar los templates. Los
-valores de "resumen" (deuda total, reclamos abiertos) y el resto del cuerpo
-de la ficha (aportes, suministros, reclamos, etc.) son de ejemplo visual y
-se repiten iguales para todos los asociados de muestra — si esos datos no
-existen todavía en el backend, no hay que inventar consultas: conectarlos
-acá cuando existan.
+Se mantiene EXACTAMENTE la misma forma de diccionario que consumían los
+templates (asociados_list.html, asociado_ficha.html), así que ninguno de
+los dos necesitó cambios.
+
+Lo que sigue siendo de ejemplo, documentado en cada lugar donde aparece,
+son los datos de módulos que todavía no existen como tales: aportes,
+suministros, reclamos/OT y familiares. Esos no tienen modelo propio
+todavía — conectarlos cuando su Historia de Usuario se confirme, sin
+inventar la lógica acá.
+
+Nota sobre "roles": HU-ASO-01 asigna numero_asociado y numero_usuario a
+TODO alta, sin excepción (ver forms.AsociadoAltaForm.save) — por eso todo
+Asociado real es a la vez "Asociado" y "Usuario"; "Proveedor" se agrega
+solo si es_proveedor está tildado. No hay todavía una forma de dar de alta
+un asociado que sea nada más "Usuario" (como sí había en los datos de
+muestra) — si el DEV confirma ese caso como real, hay que revisar acá.
 """
-
-# Directorio de asociados de muestra para el listado (buscador + filtros de
-# estado/rol/localidad) y para resolver la ficha de cada uno por
-# numero_asociado. "roles" alimenta es_asociado/es_usuario/es_proveedor.
-#
-# Localidades reales de la zona de la Cooperativa Eléctrica San Manuel
-# (partido de Tandil): San Manuel (el pueblo) + parajes rurales cercanos.
-# Para los parajes, "direccion" queda como "Zona rural, <paraje>" en vez de
-# inventar una altura o ruta puntual que no tenemos confirmada.
-_ASOCIADOS_MUESTRA = [
-    {"numero_asociado": "00184", "numero_usuario": "00231", "nombre_completo": "Juan Carlos Pérez",
-     "estado": "Activo", "localidad": "San Manuel", "direccion": "San Martín 350",
-     "roles": ["Asociado", "Usuario"]},
-    {"numero_asociado": "00212", "numero_usuario": "00256", "nombre_completo": "María Elena Gómez",
-     "estado": "Activo", "localidad": "San Manuel", "direccion": "Belgrano 128",
-     "roles": ["Asociado"]},
-    {"numero_asociado": "00305", "numero_usuario": "00340", "nombre_completo": "Roberto Daniel Fernández",
-     "estado": "Inactivo", "localidad": "Gardey", "direccion": "Zona rural, Gardey",
-     "roles": ["Asociado", "Usuario"]},
-    {"numero_asociado": "00147", "numero_usuario": "00190", "nombre_completo": "Ana Lucía Benítez",
-     "estado": "Activo", "localidad": "Fulton", "direccion": "Zona rural, Fulton",
-     "roles": ["Asociado", "Usuario", "Proveedor"]},
-    {"numero_asociado": "00098", "numero_usuario": "00121", "nombre_completo": "Carlos Alberto Duarte",
-     "estado": "Activo", "localidad": "San Manuel", "direccion": "9 de Julio 640",
-     "roles": ["Usuario"]},
-    {"numero_asociado": "00276", "numero_usuario": "00298", "nombre_completo": "Silvia Beatriz Acosta",
-     "estado": "Inactivo", "localidad": "Gardey", "direccion": "Zona rural, Gardey",
-     "roles": ["Asociado"]},
-    {"numero_asociado": "00341", "numero_usuario": "00366", "nombre_completo": "Miguel Ángel Rojas",
-     "estado": "Activo", "localidad": "María Ignacia (Vela)", "direccion": "Zona rural, María Ignacia (Vela)",
-     "roles": ["Asociado", "Proveedor"]},
-    {"numero_asociado": "00059", "numero_usuario": "00082", "nombre_completo": "Laura Patricia Ríos",
-     "estado": "Activo", "localidad": "San Manuel", "direccion": "Rivadavia 215",
-     "roles": ["Asociado", "Usuario"]},
-    {"numero_asociado": "00412", "numero_usuario": "00430", "nombre_completo": "Jorge Luis Cabrera",
-     "estado": "Activo", "localidad": "Gardey", "direccion": "Zona rural, Gardey",
-     "roles": ["Asociado"]},
-    {"numero_asociado": "00133", "numero_usuario": "00168", "nombre_completo": "Verónica Soledad Torres",
-     "estado": "Inactivo", "localidad": "San Manuel", "direccion": "Moreno 480",
-     "roles": ["Asociado", "Usuario"]},
-    {"numero_asociado": "00287", "numero_usuario": "00311", "nombre_completo": "Diego Alejandro Silva",
-     "estado": "Activo", "localidad": "Fulton", "direccion": "Zona rural, Fulton",
-     "roles": ["Usuario"]},
-    {"numero_asociado": "00019", "numero_usuario": "00044", "nombre_completo": "Marta Noemí Villalba",
-     "estado": "Activo", "localidad": "San Manuel", "direccion": "Alsina 92",
-     "roles": ["Asociado", "Usuario", "Proveedor"]},
-]
+from .models import Asociado, SuscripcionAcciones
 
 
 def _iniciales(nombre_completo):
     partes = nombre_completo.split()
+    if not partes:
+        return "—"
     if len(partes) < 2:
         return partes[0][:2].upper()
     return (partes[0][0] + partes[-1][0]).upper()
 
 
+def _formato_fecha(fecha):
+    if not fecha:
+        return "—"
+    return fecha.strftime("%d/%m/%Y")
+
+
+def _formato_dni(numero):
+    if not numero or not numero.isdigit():
+        return numero or "—"
+    return f"{int(numero):,}".replace(",", ".")
+
+
+def _formato_cuit(numero):
+    if not numero or len(numero) != 11:
+        return numero or "—"
+    return f"{numero[:2]}-{numero[2:10]}-{numero[10]}"
+
+
+def _roles_de(asociado):
+    # Ver nota de módulo: HU-ASO-01 siempre asigna ambos números.
+    roles = ["Asociado", "Usuario"]
+    if asociado.es_proveedor:
+        roles.append("Proveedor")
+    return roles
+
+
+def _asociado_a_dict_listado(asociado):
+    return {
+        "numero_asociado": asociado.numero_asociado,
+        "numero_usuario": asociado.numero_usuario,
+        "nombre_completo": asociado.nombre_o_razon_social,
+        "estado": asociado.get_estado_societario_display(),
+        "localidad": asociado.localidad or "—",
+        "direccion": asociado.domicilio,
+        "roles": _roles_de(asociado),
+    }
+
+
 def get_asociados_list():
-    """Datos de muestra para el listado de asociados (paso previo a la
-    ficha). El buscador (nombre o N° de asociado) y los filtros de
-    estado/rol/localidad de la vista actúan sobre esta misma lista."""
-    return [dict(a) for a in _ASOCIADOS_MUESTRA]
+    """Listado real de asociados (buscador + filtros de estado/rol/
+    localidad de la vista actúan sobre esta misma lista)."""
+    return [_asociado_a_dict_listado(a) for a in Asociado.objects.all()]
 
 
 def get_localidades():
-    """Localidades disponibles para el filtro del listado."""
-    return sorted({a["localidad"] for a in _ASOCIADOS_MUESTRA})
+    """Localidades presentes entre los asociados reales, para el filtro
+    del listado (vacío hasta que haya al menos un asociado cargado con
+    localidad)."""
+    localidades = (
+        Asociado.objects.exclude(localidad="")
+        .values_list("localidad", flat=True)
+        .distinct()
+    )
+    return sorted(set(localidades))
 
 
 def get_associate(numero_asociado=None):
-    """Ficha completa de un asociado. numero_asociado busca en el
-    directorio de muestra; si no se pasa (o no se encuentra), devuelve el
-    primero como default. El cuerpo de la ficha (personal/contacto/
-    domicilio/administrativa y las solapas) es el mismo boceto visual para
-    todos — solo se personalizan los campos que identifican a la persona
-    (nombre, estado, localidad, roles)."""
-    directorio = {a["numero_asociado"]: a for a in _ASOCIADOS_MUESTRA}
-    base = directorio.get(numero_asociado) or _ASOCIADOS_MUESTRA[0]
+    """Ficha completa de un asociado real, o None si no existe ningún
+    asociado con ese numero_asociado — antes (con datos de muestra) un
+    numero_asociado no encontrado mostraba el primero de la lista por
+    error; ahora se corrige: ver views.asociado_ficha, que convierte este
+    None en un 404."""
+    try:
+        asociado = Asociado.objects.get(numero_asociado=numero_asociado)
+    except Asociado.DoesNotExist:
+        return None
 
-    nombre_completo = base["nombre_completo"]
-    estado = base["estado"]
-    localidad = base["localidad"]
-    direccion = base["direccion"]
-    roles = base["roles"]
+    nombre_completo = asociado.nombre_o_razon_social
+    estado_display = asociado.get_estado_societario_display()
+    es_real = asociado.tipo_persona == Asociado.TIPO_PERSONA_REAL
+
+    if es_real:
+        personal = [
+            {"label": "Nombre y apellido", "value": asociado.nombre_apellido or "—"},
+            {"label": "DNI", "value": _formato_dni(asociado.numero_documento)},
+            {"label": "CUIT/CUIL", "value": _formato_cuit(asociado.cuit) if asociado.cuit else "—"},
+            {"label": "Fecha de nacimiento", "value": _formato_fecha(asociado.fecha_nacimiento_constitucion)},
+            {"label": "Género", "value": asociado.get_sexo_display() if asociado.sexo else "—"},
+        ]
+    else:
+        personal = [
+            {"label": "Razón social", "value": asociado.razon_social or "—"},
+            {"label": "Tipo de organismo", "value": asociado.tipo_organismo or "—"},
+            {"label": "CUIT", "value": _formato_cuit(asociado.numero_documento)},
+            {"label": "Fecha de constitución", "value": _formato_fecha(asociado.fecha_nacimiento_constitucion)},
+        ]
 
     return {
         "nombre_completo": nombre_completo,
         "iniciales": _iniciales(nombre_completo),
-        "numero_asociado": base["numero_asociado"],
-        "numero_usuario": base["numero_usuario"],
-        "estado": estado,
-        "localidad": localidad,
-        "direccion": direccion,
-        "activo": estado == "Activo",
-        "es_asociado": "Asociado" in roles,
-        "es_usuario": "Usuario" in roles,
-        "es_proveedor": "Proveedor" in roles,
-        # Resumen compacto (4 indicadores) — NO son "cards gigantes", son
-        # tiles chicos. suministros/deuda_total/reclamos_abiertos son de
-        # ejemplo visual: conectar al dato real de backend cuando exista.
+        "numero_asociado": asociado.numero_asociado,
+        "numero_usuario": asociado.numero_usuario,
+        "estado": estado_display,
+        "localidad": asociado.localidad or "—",
+        "direccion": asociado.domicilio,
+        "activo": asociado.estado_societario == "activo",
+        "es_asociado": "Asociado" in _roles_de(asociado),
+        "es_usuario": "Usuario" in _roles_de(asociado),
+        "es_proveedor": asociado.es_proveedor,
+        # suministros/deuda_total/reclamos_abiertos: de ejemplo visual, esos
+        # módulos todavía no existen — conectar cuando existan.
         "resumen": [
-            {"id": "estado", "label": "Estado", "value": estado, "kind": "status"},
+            {"id": "estado", "label": "Estado", "value": estado_display, "kind": "status"},
             {"id": "suministros", "label": "Suministros", "value": "1 activo"},
             {"id": "deuda", "label": "Deuda total", "value": "$0", "chevron": True},
             {"id": "reclamos", "label": "Reclamos abiertos", "value": "0", "chevron": True},
         ],
-        # Los siguientes 4 grupos alimentan las 4 tarjetas de la solapa
-        # "General". Son datos de ejemplo visual — usar los campos reales
-        # que ya llegan del contexto Django cuando existan; no crear campos
-        # nuevos en modelos solo para replicar el mockup.
-        "personal": [
-            {"label": "Nombre y apellido", "value": nombre_completo},
-            {"label": "DNI", "value": "28.451.902"},
-            {"label": "CUIT/CUIL", "value": "20-28451902-3"},
-            {"label": "Fecha de nacimiento", "value": "14/05/1980"},
-            {"label": "Género", "value": "—"},
-        ],
+        "personal": personal,
         "contacto": [
-            {"label": "Teléfono fijo", "value": "03795 42-1180"},
-            {"label": "Celular", "value": "+54 9 3795 55-0192"},
-            {"label": "Email", "value": "—"},
-            {"label": "Email alternativo", "value": "—"},
+            {"label": "Teléfono fijo", "value": asociado.telefono_fijo or "—"},
+            {"label": "Celular", "value": asociado.celular or "—"},
+            {"label": "Email", "value": asociado.email or "—"},
+            {"label": "Email alternativo", "value": asociado.email_alternativo or "—"},
         ],
         "domicilio_general": [
-            {"label": "Domicilio fiscal", "value": direccion},
-            {"label": "Ruta / subruta", "value": "—"},
-            {"label": "Localidad", "value": localidad},
-            {"label": "Código postal", "value": "—"},
-            {"label": "Provincia", "value": "Buenos Aires"},
+            {"label": "Domicilio fiscal", "value": asociado.domicilio},
+            {"label": "Ruta / subruta", "value": asociado.ruta_subruta or "—"},
+            {"label": "Localidad", "value": asociado.localidad or "—"},
+            {"label": "Código postal", "value": asociado.codigo_postal or "—"},
+            {"label": "Provincia", "value": asociado.provincia or "—"},
         ],
         "administrativa": [
-            {"label": "N° usuario", "value": base["numero_usuario"]},
-            {"label": "Fecha de ingreso", "value": "12/03/2019"},
-            {"label": "Estado societario", "value": estado},
-            {"label": "Categoría", "value": "Categoría A"},
-            {"label": "Observaciones", "value": "—"},
+            {"label": "N° usuario", "value": asociado.numero_usuario},
+            {"label": "Fecha de ingreso", "value": _formato_fecha(asociado.fecha_ingreso)},
+            {"label": "Estado societario", "value": estado_display},
+            {"label": "Categoría", "value": asociado.categoria or "—"},
+            {"label": "Observaciones", "value": asociado.observaciones or "—"},
         ],
     }
 
@@ -185,16 +196,52 @@ def get_asociados_cards():
 
 
 def get_associate_tabs(associate=None):
-    """Solapas de la ficha, ya renombradas 1:1 según el mockup de referencia:
-    General, Societario, Suscripción, Aportes, Suministros, Reclamos y OT,
-    Familiares*, Proveedor*.
+    """Solapas de la ficha: General, Societario, Suscripción, Aportes,
+    Suministros, Reclamos y OT, Familiares*, Proveedor*.
+
+    Societario y Suscripción ya muestran datos reales del asociado (ver
+    _asociado_real_de). Aportes/Suministros/Reclamos/Familiares siguen
+    siendo de ejemplo visual: son módulos propios que todavía no existen
+    (no tienen modelo ni Historia de Usuario confirmada) — no hay que
+    inventar esa lógica acá, solo dejarlo documentado.
 
     "Proveedor*" solo se incluye si el asociado tiene el rol de proveedor
     activo (ver associate["es_proveedor"]) — si no, se oculta directamente
     de la lista de solapas, sin inventar más lógica que ese chequeo."""
-    default = _ASOCIADOS_MUESTRA[0]
-    direccion_suministro = (associate or {}).get("direccion", default["direccion"])
-    localidad_suministro = (associate or {}).get("localidad", default["localidad"])
+    asociado = None
+    if associate is not None:
+        asociado = Asociado.objects.filter(numero_asociado=associate["numero_asociado"]).first()
+
+    if asociado is not None:
+        societario_fields = [
+            {"label": "Fecha de ingreso", "value": _formato_fecha(asociado.fecha_ingreso)},
+            {"label": "Estado societario", "value": asociado.get_estado_societario_display()},
+        ]
+        suscripcion = asociado.suscripciones.order_by("-fecha_suscripcion", "-numero_titulo").first()
+    else:
+        societario_fields = [
+            {"label": "Fecha de ingreso", "value": "—"},
+            {"label": "Estado societario", "value": "—"},
+        ]
+        suscripcion = None
+
+    if suscripcion is not None:
+        suscripcion_fields = [
+            {"label": "N° de título", "value": suscripcion.numero_titulo},
+            {"label": "Acciones suscriptas", "value": str(suscripcion.cantidad_acciones)},
+            {"label": "Capital suscripto", "value": f"${suscripcion.capital_suscripto}"},
+            {"label": "Fecha de suscripción", "value": _formato_fecha(suscripcion.fecha_suscripcion)},
+        ]
+    else:
+        # HU-ASO-02, Escenario 6: puede no haber suscripción registrada
+        # (faltaba el valor nominal vigente al momento del alta).
+        suscripcion_fields = [
+            {"label": "Acciones suscriptas", "value": "—"},
+            {"label": "Capital suscripto", "value": "—"},
+        ]
+
+    direccion_suministro = (associate or {}).get("direccion", "—")
+    localidad_suministro = (associate or {}).get("localidad", "—")
     tabs = [
         {
             "id": "general",
@@ -205,19 +252,13 @@ def get_associate_tabs(associate=None):
             "id": "societario",
             "label": "Societario",
             "kind": "fields",
-            "fields": [
-                {"label": "Fecha de ingreso", "value": "12/03/2019"},
-                {"label": "Estado societario", "value": "Activo"},
-            ],
+            "fields": societario_fields,
         },
         {
             "id": "suscripcion",
             "label": "Suscripción",
             "kind": "fields_button",
-            "fields": [
-                {"label": "Acciones suscriptas", "value": "50"},
-                {"label": "Capital integrado", "value": "$0,50"},
-            ],
+            "fields": suscripcion_fields,
             "button_label": "Imprimir solicitud de alta",
         },
         {
