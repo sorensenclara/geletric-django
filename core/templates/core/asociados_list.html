@@ -48,13 +48,14 @@
 
     {% if asociados %}
     <div class="ficha-table-wrap">
-      <table class="ficha-table">
+      <table class="ficha-table asociados-table">
         <thead>
           <tr>
             <th>Nombre</th>
             <th>N° asociado</th>
             <th>Estado</th>
             <th>Localidad</th>
+            <th>Dirección</th>
             <th></th>
           </tr>
         </thead>
@@ -65,6 +66,7 @@
             <td>{{ a.numero_asociado }}</td>
             <td><span class="status-pill{% if a.estado == "Activo" %} good{% else %} neutral{% endif %}">{{ a.estado }}</span></td>
             <td>{{ a.localidad }}</td>
+            <td>{{ a.direccion }}</td>
             <td><a class="table-link" href="{% url 'core:asociado_ficha' numero_asociado=a.numero_asociado %}">Ver ficha<svg class="icon"><use href="#i-chevright"/></svg></a></td>
           </tr>
           {% endfor %}

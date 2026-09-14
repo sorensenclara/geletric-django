@@ -23,31 +23,48 @@ acá cuando existan.
 # Directorio de asociados de muestra para el listado (buscador + filtros de
 # estado/rol/localidad) y para resolver la ficha de cada uno por
 # numero_asociado. "roles" alimenta es_asociado/es_usuario/es_proveedor.
+#
+# Localidades reales de la zona de la Cooperativa Eléctrica San Manuel
+# (partido de Tandil): San Manuel (el pueblo) + parajes rurales cercanos.
+# Para los parajes, "direccion" queda como "Zona rural, <paraje>" en vez de
+# inventar una altura o ruta puntual que no tenemos confirmada.
 _ASOCIADOS_MUESTRA = [
     {"numero_asociado": "00184", "numero_usuario": "00231", "nombre_completo": "Juan Carlos Pérez",
-     "estado": "Activo", "localidad": "Posadas", "roles": ["Asociado", "Usuario"]},
+     "estado": "Activo", "localidad": "San Manuel", "direccion": "San Martín 350",
+     "roles": ["Asociado", "Usuario"]},
     {"numero_asociado": "00212", "numero_usuario": "00256", "nombre_completo": "María Elena Gómez",
-     "estado": "Activo", "localidad": "Posadas", "roles": ["Asociado"]},
+     "estado": "Activo", "localidad": "San Manuel", "direccion": "Belgrano 128",
+     "roles": ["Asociado"]},
     {"numero_asociado": "00305", "numero_usuario": "00340", "nombre_completo": "Roberto Daniel Fernández",
-     "estado": "Inactivo", "localidad": "Garupá", "roles": ["Asociado", "Usuario"]},
+     "estado": "Inactivo", "localidad": "Gardey", "direccion": "Zona rural, Gardey",
+     "roles": ["Asociado", "Usuario"]},
     {"numero_asociado": "00147", "numero_usuario": "00190", "nombre_completo": "Ana Lucía Benítez",
-     "estado": "Activo", "localidad": "Candelaria", "roles": ["Asociado", "Usuario", "Proveedor"]},
+     "estado": "Activo", "localidad": "Fulton", "direccion": "Zona rural, Fulton",
+     "roles": ["Asociado", "Usuario", "Proveedor"]},
     {"numero_asociado": "00098", "numero_usuario": "00121", "nombre_completo": "Carlos Alberto Duarte",
-     "estado": "Activo", "localidad": "Posadas", "roles": ["Usuario"]},
+     "estado": "Activo", "localidad": "San Manuel", "direccion": "9 de Julio 640",
+     "roles": ["Usuario"]},
     {"numero_asociado": "00276", "numero_usuario": "00298", "nombre_completo": "Silvia Beatriz Acosta",
-     "estado": "Inactivo", "localidad": "Garupá", "roles": ["Asociado"]},
+     "estado": "Inactivo", "localidad": "Gardey", "direccion": "Zona rural, Gardey",
+     "roles": ["Asociado"]},
     {"numero_asociado": "00341", "numero_usuario": "00366", "nombre_completo": "Miguel Ángel Rojas",
-     "estado": "Activo", "localidad": "Candelaria", "roles": ["Asociado", "Proveedor"]},
+     "estado": "Activo", "localidad": "María Ignacia (Vela)", "direccion": "Zona rural, María Ignacia (Vela)",
+     "roles": ["Asociado", "Proveedor"]},
     {"numero_asociado": "00059", "numero_usuario": "00082", "nombre_completo": "Laura Patricia Ríos",
-     "estado": "Activo", "localidad": "Posadas", "roles": ["Asociado", "Usuario"]},
+     "estado": "Activo", "localidad": "San Manuel", "direccion": "Rivadavia 215",
+     "roles": ["Asociado", "Usuario"]},
     {"numero_asociado": "00412", "numero_usuario": "00430", "nombre_completo": "Jorge Luis Cabrera",
-     "estado": "Activo", "localidad": "Garupá", "roles": ["Asociado"]},
+     "estado": "Activo", "localidad": "Gardey", "direccion": "Zona rural, Gardey",
+     "roles": ["Asociado"]},
     {"numero_asociado": "00133", "numero_usuario": "00168", "nombre_completo": "Verónica Soledad Torres",
-     "estado": "Inactivo", "localidad": "Posadas", "roles": ["Asociado", "Usuario"]},
+     "estado": "Inactivo", "localidad": "San Manuel", "direccion": "Moreno 480",
+     "roles": ["Asociado", "Usuario"]},
     {"numero_asociado": "00287", "numero_usuario": "00311", "nombre_completo": "Diego Alejandro Silva",
-     "estado": "Activo", "localidad": "Candelaria", "roles": ["Usuario"]},
+     "estado": "Activo", "localidad": "Fulton", "direccion": "Zona rural, Fulton",
+     "roles": ["Usuario"]},
     {"numero_asociado": "00019", "numero_usuario": "00044", "nombre_completo": "Marta Noemí Villalba",
-     "estado": "Activo", "localidad": "Posadas", "roles": ["Asociado", "Usuario", "Proveedor"]},
+     "estado": "Activo", "localidad": "San Manuel", "direccion": "Alsina 92",
+     "roles": ["Asociado", "Usuario", "Proveedor"]},
 ]
 
 
@@ -83,6 +100,7 @@ def get_associate(numero_asociado=None):
     nombre_completo = base["nombre_completo"]
     estado = base["estado"]
     localidad = base["localidad"]
+    direccion = base["direccion"]
     roles = base["roles"]
 
     return {
@@ -91,6 +109,8 @@ def get_associate(numero_asociado=None):
         "numero_asociado": base["numero_asociado"],
         "numero_usuario": base["numero_usuario"],
         "estado": estado,
+        "localidad": localidad,
+        "direccion": direccion,
         "activo": estado == "Activo",
         "es_asociado": "Asociado" in roles,
         "es_usuario": "Usuario" in roles,
@@ -122,11 +142,11 @@ def get_associate(numero_asociado=None):
             {"label": "Email alternativo", "value": "—"},
         ],
         "domicilio_general": [
-            {"label": "Domicilio fiscal", "value": "Av. San Martín 450"},
-            {"label": "Ruta / subruta", "value": "R3 / S12"},
+            {"label": "Domicilio fiscal", "value": direccion},
+            {"label": "Ruta / subruta", "value": "—"},
             {"label": "Localidad", "value": localidad},
-            {"label": "Código postal", "value": "3300"},
-            {"label": "Provincia", "value": "Misiones"},
+            {"label": "Código postal", "value": "—"},
+            {"label": "Provincia", "value": "Buenos Aires"},
         ],
         "administrativa": [
             {"label": "N° usuario", "value": base["numero_usuario"]},
@@ -172,6 +192,9 @@ def get_associate_tabs(associate=None):
     "Proveedor*" solo se incluye si el asociado tiene el rol de proveedor
     activo (ver associate["es_proveedor"]) — si no, se oculta directamente
     de la lista de solapas, sin inventar más lógica que ese chequeo."""
+    default = _ASOCIADOS_MUESTRA[0]
+    direccion_suministro = (associate or {}).get("direccion", default["direccion"])
+    localidad_suministro = (associate or {}).get("localidad", default["localidad"])
     tabs = [
         {
             "id": "general",
@@ -212,7 +235,7 @@ def get_associate_tabs(associate=None):
             "kind": "suministros",
             "items": [
                 {"nis": "004521", "tipo": "Energía eléctrica",
-                 "direccion": "Av. San Martín 450, Posadas", "activo": True},
+                 "direccion": f"{direccion_suministro}, {localidad_suministro}", "activo": True},
             ],
         },
         {
