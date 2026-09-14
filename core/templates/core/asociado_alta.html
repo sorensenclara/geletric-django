@@ -1,0 +1,142 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}GELETRIC · Alta de asociado{% endblock %}
+
+{% block content %}
+<div class="module-view">
+  <a class="back-btn" href="{% url 'core:module_detail' slug='asociados' %}"><svg class="icon"><use href="#i-arrowleft"/></svg>Volver a Asociados y servicios</a>
+
+  <div class="module-head">
+    <span class="asoc-menu-icon asoc-menu-icon-lg"><svg class="icon"><use href="#i-user-plus"/></svg></span>
+    <div>
+      <h2>Alta de asociado</h2>
+      <p>Registrá un nuevo asociado con sus datos personales y societarios (HU-ASO-01).</p>
+    </div>
+  </div>
+
+  {% if form.non_field_errors %}
+  <div class="alert-banner critical">
+    <svg class="icon"><use href="#i-alert-bubble"/></svg>
+    <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+  </div>
+  {% endif %}
+
+  <form method="post" class="card card-pad" novalidate>
+    {% csrf_token %}
+
+    <div class="card-head"><h3>Datos del usuario</h3></div>
+    <div class="info-card-fields info-card-fields-standalone">
+
+      <label class="auth-field">
+        <span class="auth-field-label">{{ form.tipo_persona.label }}</span>
+        {{ form.tipo_persona }}
+        {% for error in form.tipo_persona.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <label class="auth-field" data-solo="real">
+        <span class="auth-field-label">{{ form.nombre_apellido.label }}</span>
+        <span class="auth-input-wrap{% if form.nombre_apellido.errors %} error{% endif %}">{{ form.nombre_apellido }}</span>
+        {% for error in form.nombre_apellido.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <label class="auth-field" data-solo="ideal">
+        <span class="auth-field-label">{{ form.razon_social.label }}</span>
+        <span class="auth-input-wrap{% if form.razon_social.errors %} error{% endif %}">{{ form.razon_social }}</span>
+        {% for error in form.razon_social.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <label class="auth-field">
+        <span class="auth-field-label" id="numero-documento-label">DNI</span>
+        <span class="auth-input-wrap{% if form.numero_documento.errors %} error{% endif %}">{{ form.numero_documento }}</span>
+        {% for error in form.numero_documento.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <label class="auth-field" data-solo="real">
+        <span class="auth-field-label">{{ form.cuit.label }}</span>
+        <span class="auth-input-wrap{% if form.cuit.errors %} error{% endif %}">{{ form.cuit }}</span>
+        {% for error in form.cuit.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <label class="auth-field" data-solo="real">
+        <span class="auth-field-label">{{ form.sexo.label }}</span>
+        {{ form.sexo }}
+        {% for error in form.sexo.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <label class="auth-field" data-solo="ideal">
+        <span class="auth-field-label">{{ form.tipo_organismo.label }}</span>
+        <span class="auth-input-wrap{% if form.tipo_organismo.errors %} error{% endif %}">{{ form.tipo_organismo }}</span>
+        {% for error in form.tipo_organismo.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <label class="auth-field">
+        <span class="auth-field-label" id="fecha-label">Fecha de nacimiento</span>
+        <span class="auth-input-wrap{% if form.fecha_nacimiento_constitucion.errors %} error{% endif %}">{{ form.fecha_nacimiento_constitucion }}</span>
+        {% for error in form.fecha_nacimiento_constitucion.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <label class="auth-field">
+        <span class="auth-field-label">{{ form.domicilio.label }}</span>
+        <span class="auth-input-wrap{% if form.domicilio.errors %} error{% endif %}">{{ form.domicilio }}</span>
+        {% for error in form.domicilio.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+    </div>
+
+    <div class="card-head"><h3>Datos del asociado</h3></div>
+    <div class="info-card-fields info-card-fields-standalone">
+
+      <label class="auth-field">
+        <span class="auth-field-label">{{ form.condicion_iva.label }}</span>
+        {{ form.condicion_iva }}
+        {% for error in form.condicion_iva.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+      </label>
+
+      <div class="info-field disabled">
+        <span class="info-label">N° de asociado / N° de usuario</span>
+        <span class="info-value">Se asignan automáticamente al confirmar el alta</span>
+      </div>
+
+      <div class="info-field disabled">
+        <span class="info-label">Estado societario</span>
+        <span class="info-value">Activo</span>
+      </div>
+
+      <div class="info-field disabled">
+        <span class="info-label">Fecha de ingreso</span>
+        <span class="info-value">Hoy</span>
+      </div>
+
+    </div>
+
+    <button class="btn-primary" type="submit"><svg class="icon"><use href="#i-check"/></svg>Confirmar alta</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var tipoSelect = document.getElementById('id_tipo_persona');
+  if (!tipoSelect) return;
+
+  function aplicar() {
+    var esReal = tipoSelect.value === 'real';
+    document.querySelectorAll('[data-solo]').forEach(function (wrap) {
+      var mostrar = wrap.dataset.solo === (esReal ? 'real' : 'ideal');
+      wrap.hidden = !mostrar;
+      var campo = wrap.querySelector('input, select');
+      if (campo) campo.disabled = !mostrar;
+    });
+    var fechaLabel = document.getElementById('fecha-label');
+    if (fechaLabel) fechaLabel.textContent = esReal ? 'Fecha de nacimiento' : 'Fecha de constitución';
+    var docLabel = document.getElementById('numero-documento-label');
+    if (docLabel) docLabel.textContent = esReal ? 'DNI' : 'N° de identificación (CUIT)';
+  }
+
+  tipoSelect.addEventListener('change', aplicar);
+  aplicar();
+});
+</script>
+{% endblock %}

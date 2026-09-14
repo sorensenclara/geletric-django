@@ -1,11 +1,12 @@
+from django.contrib import messages
 from django.contrib.auth.views import LoginView
 from django.http import Http404
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from . import associate_data as ad
 from . import sample_data as sd
-from .forms import GeletricLoginForm
+from .forms import AsociadoAltaForm, GeletricLoginForm
 from .modules_data import get_module
 
 
@@ -118,6 +119,36 @@ def asociado_ficha(request, numero_asociado):
         "module": get_module("asociados"),
         "associate": associate,
         "tabs": ad.get_associate_tabs(associate),
+    })
+
+
+def asociado_alta(request):
+    """Alta de asociado (HU-ASO-01) — primer formulario del sistema con
+    persistencia real (ver core/models.py: Asociado). El listado y la
+    ficha (core:asociados_list, core:asociado_ficha) siguen mostrando
+    datos de muestra de associate_data.py hasta que su propia Historia de
+    Usuario quede cerrada: un alta hecha acá todavía no aparece ahí.
+
+    PREG-ASO-01 (bloqueante en la HU) sigue sin resolverse: el número de
+    asociado/usuario se asigna con un correlativo simple, sin reutilizar
+    números dados de baja — ver Asociado.siguiente_numero_asociado."""
+    if request.method == "POST":
+        form = AsociadoAltaForm(request.POST)
+        if form.is_valid():
+            asociado = form.save()
+            messages.success(
+                request,
+                f"Asociado N° {asociado.numero_asociado} (Usuario N° {asociado.numero_usuario}) "
+                f"creado correctamente.",
+            )
+            return redirect("core:asociado_alta")
+    else:
+        form = AsociadoAltaForm()
+
+    return render(request, "core/asociado_alta.html", {
+        "active_slug": "asociados",
+        "module": get_module("asociados"),
+        "form": form,
     })
 
 

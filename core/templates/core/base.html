@@ -69,6 +69,14 @@
     </div>
 
     <div class="content">
+      {% if messages %}
+      {% for message in messages %}
+      <div class="alert-banner {% if message.tags == 'error' %}critical{% elif message.tags == 'warning' %}warning{% else %}good{% endif %}">
+        <svg class="icon"><use href="#{% if message.tags == 'error' %}i-alert-bubble{% else %}i-check{% endif %}"/></svg>
+        <div><p>{{ message }}</p></div>
+      </div>
+      {% endfor %}
+      {% endif %}
       {% block content %}{% endblock %}
     </div>
   </div>

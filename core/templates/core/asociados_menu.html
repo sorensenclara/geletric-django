@@ -18,7 +18,7 @@
 
   <div class="asoc-menu-grid">
     {% for c in cards %}
-    <a class="asoc-menu-card" href="{% if c.slug == 'ficha' %}{% url 'core:asociados_list' %}{% else %}{% url 'core:asociado_sub' subslug=c.slug %}{% endif %}">
+    <a class="asoc-menu-card" href="{% if c.slug == 'ficha' %}{% url 'core:asociados_list' %}{% elif c.slug == 'abm' %}{% url 'core:asociado_alta' %}{% else %}{% url 'core:asociado_sub' subslug=c.slug %}{% endif %}">
       <span class="asoc-menu-icon"><svg class="icon"><use href="#{{ c.icon }}"/></svg></span>
       <span class="asoc-menu-text">
         <b>{{ c.label }}</b>
