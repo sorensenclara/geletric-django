@@ -42,6 +42,7 @@
 
     --radius:14px;
     --radius-sm:9px;
+    --radius-btn:32px;
     --font-display:'Titillium Web', system-ui, sans-serif;
     --font-body:'Titillium Web', system-ui, sans-serif;
   }
@@ -275,7 +276,7 @@
   .status-chip.good{color:var(--status-good);border-color:color-mix(in srgb, var(--status-good) 30%, var(--border));background:color-mix(in srgb, var(--status-good) 10%, var(--surface-2));}
   .status-chip.good i{background:var(--status-good);}
 
-  .btn-primary{display:inline-flex;align-items:center;gap:7px;background:var(--sidebar-bg);border:1px solid var(--sidebar-bg);border-radius:var(--radius-sm);color:#fff;font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 16px;cursor:pointer;}
+  .btn-primary{display:inline-flex;align-items:center;gap:7px;background:var(--sidebar-bg);border:1px solid var(--sidebar-bg);border-radius:var(--radius-btn);color:#fff;font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 16px;cursor:pointer;}
   .btn-primary:hover{background:var(--sidebar-bg-active);border-color:var(--sidebar-bg-active);}
   .btn-primary .icon{width:16px;height:16px;}
 
@@ -309,7 +310,7 @@
   .info-value{font-size:13.5px;color:var(--text);word-break:break-word;}
   .info-field.disabled .info-value{color:var(--text-muted);}
 
-  .btn-secondary{display:inline-flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 14px;cursor:pointer;}
+  .btn-secondary{display:inline-flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-btn);color:var(--text);font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 14px;cursor:pointer;}
   .btn-secondary:hover{background:var(--surface);border-color:var(--border-strong);}
   .btn-secondary .icon{width:16px;height:16px;color:var(--sidebar-bg);}
 
