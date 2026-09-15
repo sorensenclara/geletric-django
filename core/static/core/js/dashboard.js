@@ -31,14 +31,19 @@
       try { localStorage.setItem(PIN_KEY, pinned ? "1" : "0"); } catch (e) {}
     }
 
+    // .scrim (el fondo oscurecido) no está acotado por media query en
+    // dashboard.css, así que si lo abriéramos siempre en el click, se
+    // oscurecería la pantalla también en desktop. Por eso acá sí hace
+    // falta distinguir mobile (cajón + scrim) de desktop (solo pinear).
+    var mobileQuery = window.matchMedia("(max-width: 860px)");
+
     menuBtn.addEventListener("click", function () {
-      // En mobile (drawer) esto abre el menú; en desktop, pinea/despinea
-      // el sidebar expandido. Ambos operan sobre el mismo elemento sin
-      // pisarse: cada comportamiento queda acotado por su media query en
-      // dashboard.css, así que no hace falta detectar el viewport acá.
-      sidebar.classList.add("open");
-      scrim.classList.add("open");
-      setPinned(!sidebar.classList.contains("pinned"));
+      if (mobileQuery.matches) {
+        sidebar.classList.add("open");
+        scrim.classList.add("open");
+      } else {
+        setPinned(!sidebar.classList.contains("pinned"));
+      }
     });
     scrim.addEventListener("click", close);
     sidebar.querySelectorAll(".nav-item").forEach(function (el) {
