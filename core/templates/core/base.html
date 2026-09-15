@@ -15,6 +15,7 @@
 <div class="app">
   <div class="scrim" id="scrim"></div>
   <aside class="sidebar" id="sidebar">
+    <script>try{if(localStorage.getItem('geletric-sidebar-pinned')==='1'){document.currentScript.parentElement.classList.add('pinned');}}catch(e){}</script>
     <div class="brand">
       <img class="brand-logo brand-logo-full" src="{% static 'core/images/SVG/Isologotipo GELETRIC white.svg' %}" alt="GELETRIC — software de gestión para cooperativas eléctricas">
       <img class="brand-logo brand-logo-icon" src="{% static 'core/images/SVG/Iso GELETRIC.svg' %}" alt="GELETRIC">
@@ -44,7 +45,7 @@
 
   <div class="main">
     <div class="topbar">
-      <button class="menu-btn" id="menu-btn" type="button" aria-label="Abrir menú"><svg class="icon"><use href="#i-menu"/></svg></button>
+      <button class="menu-btn" id="menu-btn" type="button" aria-label="Abrir menú" aria-pressed="false"><svg class="icon"><use href="#i-menu"/></svg></button>
       <label class="search">
         <svg class="icon"><use href="#i-search"/></svg>
         <input type="text" placeholder="Buscar asociado, suministro, factura, orden de trabajo…" />

@@ -6,25 +6,48 @@
 (function (window) {
   "use strict";
 
-  // ---------- menú lateral en mobile ----------
+  // ---------- menú lateral: drawer en mobile, "pineado" en desktop ----------
   function initSidebarToggle() {
     var sidebar = document.getElementById("sidebar");
     var scrim = document.getElementById("scrim");
     var menuBtn = document.getElementById("menu-btn");
     if (!sidebar || !scrim || !menuBtn) return;
 
+    var PIN_KEY = "geletric-sidebar-pinned";
+
     function close() {
       sidebar.classList.remove("open");
       scrim.classList.remove("open");
     }
+
+    // En desktop, el sidebar ya se expande solo con :hover/:focus-within
+    // (ver dashboard.css); "pinear" lo deja expandido aunque el mouse no
+    // esté encima, y se guarda para que se mantenga al navegar entre
+    // páginas (base.html restaura la clase antes del primer render, igual
+    // que initBrandPicker con el color del sistema).
+    function setPinned(pinned) {
+      sidebar.classList.toggle("pinned", pinned);
+      menuBtn.setAttribute("aria-pressed", pinned ? "true" : "false");
+      try { localStorage.setItem(PIN_KEY, pinned ? "1" : "0"); } catch (e) {}
+    }
+
     menuBtn.addEventListener("click", function () {
+      // En mobile (drawer) esto abre el menú; en desktop, pinea/despinea
+      // el sidebar expandido. Ambos operan sobre el mismo elemento sin
+      // pisarse: cada comportamiento queda acotado por su media query en
+      // dashboard.css, así que no hace falta detectar el viewport acá.
       sidebar.classList.add("open");
       scrim.classList.add("open");
+      setPinned(!sidebar.classList.contains("pinned"));
     });
     scrim.addEventListener("click", close);
     sidebar.querySelectorAll(".nav-item").forEach(function (el) {
       el.addEventListener("click", close);
     });
+
+    // sincroniza aria-pressed con la clase que base.html ya aplicó
+    // (o no) antes de este script correr.
+    menuBtn.setAttribute("aria-pressed", sidebar.classList.contains("pinned") ? "true" : "false");
   }
 
   function readJSON(id) {

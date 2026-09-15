@@ -129,7 +129,8 @@
   /* ---------- Topbar ---------- */
   .main{flex:1;min-width:0;display:flex;flex-direction:column;}
   .topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);}
-  .menu-btn{display:none;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);width:36px;height:36px;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;}
+  .menu-btn{display:flex;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);width:36px;height:36px;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;}
+  .menu-btn[aria-pressed="true"]{background:var(--surface-2);border-color:var(--border-strong);color:var(--text);}
   .search{flex:1;max-width:460px;display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:8px 12px;color:var(--text-muted);}
   .search input{border:none;background:none;outline:none;font-size:13.5px;color:var(--text);width:100%;font-family:var(--font-body);}
   .search kbd{font-size:10.5px;color:var(--text-muted);border:1px solid var(--border-strong);border-radius:5px;padding:2px 6px;font-family:var(--font-body);}
@@ -371,26 +372,31 @@
      y el isologotipo completo. Solo aplica en escritorio: en mobile el
      sidebar ya es un cajón aparte que se abre con el botón de menú. ---------- */
   @media (min-width: 861px){
+    /* Colapsado (80px, solo íconos) por defecto; se expande al pasar el
+       mouse (:hover/:focus-within) o quedando "pineado" con .pinned —
+       esta última la agrega/saca el botón hamburguesa del topbar
+       (#menu-btn, ver dashboard.js) y se guarda en localStorage para que
+       el estado se mantenga al navegar entre páginas. */
     .sidebar{width:80px;}
-    .sidebar:hover, .sidebar:focus-within{width:252px;}
+    .sidebar:hover, .sidebar:focus-within, .sidebar.pinned{width:252px;}
 
     .brand{justify-content:center;}
-    .sidebar:hover .brand, .sidebar:focus-within .brand{justify-content:flex-start;}
+    .sidebar:hover .brand, .sidebar:focus-within .brand, .sidebar.pinned .brand{justify-content:flex-start;}
     .brand-logo-full{display:none;}
     .brand-logo-icon{display:block;}
-    .sidebar:hover .brand-logo-full, .sidebar:focus-within .brand-logo-full{display:block;}
-    .sidebar:hover .brand-logo-icon, .sidebar:focus-within .brand-logo-icon{display:none;}
+    .sidebar:hover .brand-logo-full, .sidebar:focus-within .brand-logo-full, .sidebar.pinned .brand-logo-full{display:block;}
+    .sidebar:hover .brand-logo-icon, .sidebar:focus-within .brand-logo-icon, .sidebar.pinned .brand-logo-icon{display:none;}
 
     .nav-item{justify-content:center;padding:9px 0;}
     .nav-item span{display:none;white-space:nowrap;}
-    .sidebar:hover .nav-item, .sidebar:focus-within .nav-item{justify-content:flex-start;padding:9px 10px;}
-    .sidebar:hover .nav-item span, .sidebar:focus-within .nav-item span{display:inline;}
+    .sidebar:hover .nav-item, .sidebar:focus-within .nav-item, .sidebar.pinned .nav-item{justify-content:flex-start;padding:9px 10px;}
+    .sidebar:hover .nav-item span, .sidebar:focus-within .nav-item span, .sidebar.pinned .nav-item span{display:inline;}
 
     .sidebar-divider, .sidebar-meta{display:none;}
     .energy-bar{display:none;}
-    .sidebar:hover .sidebar-divider, .sidebar:focus-within .sidebar-divider{display:block;}
-    .sidebar:hover .energy-bar, .sidebar:focus-within .energy-bar{display:block;}
-    .sidebar:hover .sidebar-meta, .sidebar:focus-within .sidebar-meta{display:flex;}
+    .sidebar:hover .sidebar-divider, .sidebar:focus-within .sidebar-divider, .sidebar.pinned .sidebar-divider{display:block;}
+    .sidebar:hover .energy-bar, .sidebar:focus-within .energy-bar, .sidebar.pinned .energy-bar{display:block;}
+    .sidebar:hover .sidebar-meta, .sidebar:focus-within .sidebar-meta, .sidebar.pinned .sidebar-meta{display:flex;}
   }
 
   @media (max-width: 1080px){
