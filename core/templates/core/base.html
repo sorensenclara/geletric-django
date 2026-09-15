@@ -22,7 +22,15 @@
     </div>
 
     <div class="sidebar-body">
-    <nav class="nav">
+    <div class="sidebar-search-wrap">
+      <label class="sidebar-search">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="text" id="sidebar-search-input" placeholder="Buscar en el menú…" autocomplete="off" aria-label="Buscar en el menú">
+        <button type="button" id="sidebar-search-clear" class="sidebar-search-clear" aria-label="Limpiar búsqueda" hidden><svg class="icon"><use href="#i-x"/></svg></button>
+      </label>
+    </div>
+
+    <nav class="nav" id="sidebar-nav">
       <a class="nav-item{% if active_slug == 'home' %} active{% endif %}" href="{% url 'core:home' %}">
         <svg class="icon"><use href="#i-home"/></svg><span>Inicio</span>
       </a>
@@ -33,7 +41,9 @@
       {% endfor %}
     </nav>
 
-    <div class="sidebar-foot">
+    <div class="sidebar-results" id="sidebar-results" hidden></div>
+
+    <div class="sidebar-foot" id="sidebar-foot">
       <div class="sidebar-divider"></div>
       <button class="nav-item" type="button"><svg class="icon"><use href="#i-help"/></svg><span>Ayuda y soporte</span></button>
       <div class="sidebar-divider"></div>
@@ -83,6 +93,7 @@
   </div>
 </div>
 
+{{ sidebar_search_index|json_script:"sidebar-search-data" }}
 <script src="{% static 'core/js/dashboard.js' %}"></script>
 {% block extra_js %}{% endblock %}
 </body>

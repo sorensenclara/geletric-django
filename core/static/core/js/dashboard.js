@@ -61,6 +61,83 @@
     try { return JSON.parse(el.textContent); } catch (e) { return null; }
   }
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // ---------- buscador del sidebar ----------
+  // Filtra el menú (módulos + opciones de submenú, ver
+  // core.context_processors.sidebar_search_index) por lo que se va
+  // tipeando: cualquier PALABRA de la etiqueta que empiece con lo tipeado
+  // cuenta como coincidencia (ej. "fac" encuentra "Facturación masiva" y
+  // "Autorización de facturas electrónicas"), sin distinguir mayúsculas
+  // ni acentos. Todo pasa en el navegador — el índice ya viene armado
+  // desde el servidor, así que no hay ida y vuelta por cada letra.
+  function initSidebarSearch() {
+    var data = readJSON("sidebar-search-data");
+    var input = document.getElementById("sidebar-search-input");
+    var clearBtn = document.getElementById("sidebar-search-clear");
+    var nav = document.getElementById("sidebar-nav");
+    var foot = document.getElementById("sidebar-foot");
+    var results = document.getElementById("sidebar-results");
+    if (!data || !input || !nav || !foot || !results) return;
+
+    function normalize(s) {
+      return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    function matches(label, normalizedQuery) {
+      var words = label.split(/[\s/,()\-]+/);
+      for (var i = 0; i < words.length; i++) {
+        if (words[i] && normalize(words[i]).indexOf(normalizedQuery) === 0) return true;
+      }
+      return false;
+    }
+
+    function renderResult(entry) {
+      var iconHtml = entry.icon_kind === "sprite"
+        ? '<svg class="icon"><use href="#' + entry.icon_id + '"/></svg>'
+        : entry.icon_svg;
+      var subHtml = entry.sub ? "<small>" + escapeHtml(entry.sub) + "</small>" : "";
+      return '<a class="nav-item search-result" href="' + entry.href + '">' +
+        iconHtml +
+        '<div class="nav-item-text"><b>' + escapeHtml(entry.label) + "</b>" + subHtml + "</div>" +
+        "</a>";
+    }
+
+    function render(rawQuery) {
+      var query = rawQuery.trim();
+      clearBtn.hidden = !query;
+
+      if (!query) {
+        nav.hidden = false;
+        foot.hidden = false;
+        results.hidden = true;
+        results.innerHTML = "";
+        return;
+      }
+
+      var q = normalize(query);
+      var matched = data.filter(function (entry) { return matches(entry.label, q); });
+
+      nav.hidden = true;
+      foot.hidden = true;
+      results.hidden = false;
+      results.innerHTML = matched.length
+        ? matched.map(renderResult).join("")
+        : '<p class="sidebar-results-empty">Sin resultados para “' + escapeHtml(query) + '”.</p>';
+    }
+
+    input.addEventListener("input", function () { render(input.value); });
+    clearBtn.addEventListener("click", function () {
+      input.value = "";
+      render("");
+      input.focus();
+    });
+  }
+
   // ---------- gráfico de línea (consumo) ----------
   function initLineChart(dataElId, mountElId) {
     var series = readJSON(dataElId);
@@ -224,6 +301,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     initSidebarToggle();
+    initSidebarSearch();
     initBrandPicker();
   });
 })(window);

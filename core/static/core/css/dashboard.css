@@ -117,6 +117,27 @@
   .nav-item.active::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--brand-green);}
   .nav-item:focus-visible{outline:2px solid var(--brand-green);outline-offset:1px;}
 
+  /* ---------- Buscador del sidebar ----------
+     Filtra el menú (módulos + opciones de submenú) a medida que se tipea —
+     ver initSidebarSearch en dashboard.js. Mientras hay una búsqueda
+     activa, #sidebar-nav y #sidebar-foot se ocultan y #sidebar-results
+     los reemplaza con solo las coincidencias. */
+  .sidebar-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid var(--sidebar-border);border-radius:999px;padding:7px 11px;color:var(--sidebar-text-muted);}
+  .sidebar-search input{border:none;background:none;outline:none;font-size:13px;color:var(--sidebar-text-active);width:100%;font-family:var(--font-body);}
+  .sidebar-search input::placeholder{color:var(--sidebar-text-muted);}
+  .sidebar-search-clear{background:none;border:none;padding:2px;margin:0;display:flex;color:var(--sidebar-text-muted);cursor:pointer;flex-shrink:0;}
+  .sidebar-search-clear:hover{color:var(--sidebar-text-active);}
+  .sidebar-search-clear[hidden]{display:none;}
+
+  .nav[hidden], .sidebar-foot[hidden]{display:none;}
+  .sidebar-results{display:flex;flex-direction:column;gap:2px;}
+  .sidebar-results[hidden]{display:none;}
+  .nav-item-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .nav-item-text b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .nav-item-text small{font-size:11px;font-weight:400;color:var(--sidebar-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .nav-item.search-result:hover .nav-item-text small{color:var(--sidebar-text);}
+  .sidebar-results-empty{margin:0;padding:9px 10px;font-size:12.5px;color:var(--sidebar-text-muted);}
+
   .sidebar-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px;}
   .sidebar-divider{height:1px;background:var(--sidebar-border);margin:2px 0;}
   .energy-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden;}
@@ -397,6 +418,11 @@
     .sidebar:hover .sidebar-divider, .sidebar:focus-within .sidebar-divider, .sidebar.pinned .sidebar-divider{display:block;}
     .sidebar:hover .energy-bar, .sidebar:focus-within .energy-bar, .sidebar.pinned .energy-bar{display:block;}
     .sidebar:hover .sidebar-meta, .sidebar:focus-within .sidebar-meta, .sidebar.pinned .sidebar-meta{display:flex;}
+
+    /* Buscador: solo tiene sentido si hay dónde escribir texto, así que
+       se oculta colapsado igual que el resto del contenido con texto. */
+    .sidebar-search-wrap{display:none;}
+    .sidebar:hover .sidebar-search-wrap, .sidebar:focus-within .sidebar-search-wrap, .sidebar.pinned .sidebar-search-wrap{display:block;}
   }
 
   @media (max-width: 1080px){
