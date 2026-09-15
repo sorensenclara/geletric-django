@@ -258,3 +258,56 @@ class SuscripcionAcciones(models.Model):
             fecha_suscripcion=fecha,
         )
         return suscripcion, None
+
+
+class Suministro(models.Model):
+    """Vínculo societario obligatorio del suministro (HU-ASO-03). Modela
+    únicamente lo que esta HU exige — el vínculo con el asociado — no un
+    alta de suministro completa: todavía no tiene pantalla propia (según
+    TECNICO va a ser un wizard que arranca desde el alta del asociado) ni
+    los campos operativos que un suministro real necesita (domicilio,
+    NIS, tipo de servicio, tarifa, etc.) — esos quedan para cuando su
+    propia Historia de Usuario los defina.
+
+    Socio y Titular son dos vínculos separados a propósito (decisión
+    tomada con el usuario el 09/09/2026, corrigiendo una primera versión
+    que los trataba como sinónimos): el Socio sostiene la relación
+    cooperativa (lo que hace del servicio un acto cooperativo exento de
+    Ingresos Brutos); el Titular es quien de hecho consume el servicio y
+    recibe la factura. Coinciden casi siempre, pero no cuando, por
+    ejemplo, un asociado alquila el inmueble a un tercero.
+
+    Escenario 1 (Socio obligatorio) lo garantiza el propio campo `socio`,
+    que no admite blank/null. Escenario 2 (rechazar un Socio sin rol de
+    asociado) no necesita código de validación propio: hoy Asociado es la
+    única tabla de contactos del sistema y toda fila ahí ya tiene el rol
+    "Asociado" por construcción (ver HU-ASO-01 y la nota de roles en
+    associate_data.py) — el FK ya lo garantiza, no hace falta chequearlo
+    a mano. El día que exista un contacto que sea Usuario/Titular sin ser
+    Asociado (PREG-ASO-10, sobre el padrón migrado), ahí sí va a hacer
+    falta un chequeo explícito acá; hasta entonces, escribir esa
+    validación sería simular una distinción que el modelo de datos
+    todavía no tiene. Titular no tiene ninguna restricción de rol
+    (Escenarios 3, 4, 5): cualquier Asociado puede ser Titular."""
+
+    socio = models.ForeignKey(
+        "Asociado", on_delete=models.CASCADE, related_name="suministros_como_socio",
+        verbose_name="Socio",
+    )
+    titular = models.ForeignKey(
+        "Asociado", on_delete=models.CASCADE, related_name="suministros_como_titular",
+        verbose_name="Titular",
+    )
+    fecha_alta = models.DateField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Suministro"
+        verbose_name_plural = "Suministros"
+
+    def __str__(self):
+        if self.titular_id == self.socio_id:
+            return f"Suministro de {self.socio.nombre_o_razon_social}"
+        return (
+            f"Suministro de {self.titular.nombre_o_razon_social} "
+            f"(socio: {self.socio.nombre_o_razon_social})"
+        )

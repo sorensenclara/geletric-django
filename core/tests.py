@@ -14,8 +14,8 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from . import associate_data as ad
-from .forms import AsociadoAltaForm
-from .models import Asociado, ParametroSuscripcion, SuscripcionAcciones, ValorNominalAccion
+from .forms import AsociadoAltaForm, SuministroAltaForm
+from .models import Asociado, ParametroSuscripcion, Suministro, SuscripcionAcciones, ValorNominalAccion
 from .validators import (
     cuit_contiene_dni,
     cuit_valido,
@@ -475,3 +475,71 @@ class SeedAsociadosCommandTests(TestCase):
         call_command("seed_asociados")
         self.assertTrue(Asociado.objects.filter(es_proveedor=True).exists())
         self.assertIn("Gardey", ad.get_localidades())
+
+
+class SuministroAltaFormTests(TestCase):
+    """Tests de HU-ASO-03 (Vínculo societario obligatorio del suministro).
+
+    Escenario 2 (rechazar un Socio sin rol de asociado) no tiene test acá
+    a propósito: hoy Asociado es la única tabla de contactos del sistema
+    y toda fila ahí ya tiene el rol "Asociado" por construcción (ver la
+    nota en models.Suministro), así que el propio ForeignKey de `socio`
+    ya lo garantiza sin código de validación adicional que testear —
+    escribir un test para eso sería simular un tipo de contacto
+    ("Usuario sin rol asociado") que el modelo de datos todavía no tiene
+    (PREG-ASO-10).
+
+    Escenario 7 (servicio facturado sin suministro) tampoco tiene test:
+    no hay módulo de Facturación todavía — es la propia HU la que lo deja
+    diferido en PREG-ASO-07."""
+
+    def test_escenario_1_socio_obligatorio(self):
+        form = SuministroAltaForm(data={})
+        self.assertFalse(form.is_valid())
+        self.assertIn("socio", form.errors)
+        self.assertEqual(Suministro.objects.count(), 0)
+
+    def test_escenario_3_titular_distinto_del_socio(self):
+        # Un asociado dueño de un inmueble que lo alquila: el socio
+        # (dueño) y el titular (inquilino) son personas distintas.
+        dueno = _crear(_datos_real(numero_documento="11111111", nombre_apellido="Dueño Propietario"))
+        inquilino = _crear(_datos_real(numero_documento="22222222", nombre_apellido="Inquilino Externo"))
+
+        form = SuministroAltaForm(data={"socio": dueno.pk, "titular": inquilino.pk})
+        self.assertTrue(form.is_valid(), form.errors)
+        suministro = form.save()
+
+        self.assertEqual(suministro.socio, dueno)
+        self.assertEqual(suministro.titular, inquilino)
+
+    def test_escenario_4_titular_omitido_usa_el_mismo_socio(self):
+        asociado = _crear(_datos_real(numero_documento="11111111"))
+        form = SuministroAltaForm(data={"socio": asociado.pk})
+        self.assertTrue(form.is_valid(), form.errors)
+        suministro = form.save()
+        self.assertEqual(suministro.titular, asociado)
+        self.assertEqual(suministro.socio, asociado)
+
+    def test_escenario_4_titular_igual_al_socio_explicito(self):
+        asociado = _crear(_datos_real(numero_documento="11111111"))
+        form = SuministroAltaForm(data={"socio": asociado.pk, "titular": asociado.pk})
+        self.assertTrue(form.is_valid(), form.errors)
+        suministro = form.save()
+        self.assertEqual(suministro.titular, suministro.socio)
+
+    def test_escenario_5_titular_sin_restriccion_de_rol(self):
+        # La HU pide que un Titular no tenga que ser "asociado" — hoy,
+        # como todo Asociado ya tiene ambos roles (ver nota de clase), el
+        # caso observable coincide con el escenario 3: cualquier Asociado
+        # puede ser Titular de un suministro ajeno, sin chequeo de rol.
+        socio = _crear(_datos_real(numero_documento="11111111"))
+        titular = _crear(_datos_real(numero_documento="22222222"))
+        form = SuministroAltaForm(data={"socio": socio.pk, "titular": titular.pk})
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_escenario_6_asociado_sin_suministros_sigue_activo(self):
+        asociado = _crear(_datos_real(numero_documento="11111111"))
+        self.assertEqual(asociado.suministros_como_socio.count(), 0)
+        self.assertEqual(asociado.suministros_como_titular.count(), 0)
+        asociado.refresh_from_db()
+        self.assertEqual(asociado.estado_societario, "activo")

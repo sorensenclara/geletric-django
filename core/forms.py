@@ -16,7 +16,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 
-from .models import Asociado, SuscripcionAcciones
+from .models import Asociado, Suministro, SuscripcionAcciones
 from .validators import cuit_contiene_dni, cuit_valido, normalizar_numero, prefijo_cuit_coherente
 
 
@@ -216,3 +216,39 @@ class AsociadoAltaForm(forms.Form):
             )
             self.suscripcion, self.suscripcion_error = SuscripcionAcciones.registrar_para(asociado)
             return asociado
+
+
+class SuministroAltaForm(forms.Form):
+    """Vínculo societario del suministro (HU-ASO-03). No es un alta de
+    suministro completa (ver la nota en models.Suministro) — valida
+    exactamente lo que pide esta HU.
+
+    Titular no es obligatorio para el operador: si no se indica uno
+    distinto, el suministro queda con el mismo contacto como Socio y
+    como Titular (Escenario 4) — el caso más común, según la propia HU.
+    Escenario 3 (Titular distinto, ej. un inquilino) se cubre indicando
+    un Titular distinto del Socio."""
+
+    socio = forms.ModelChoiceField(
+        queryset=Asociado.objects.all(),
+        label="Socio",
+        widget=forms.Select(attrs={"class": "list-select"}),
+        error_messages={"required": "El Socio del suministro es obligatorio."},
+    )
+    titular = forms.ModelChoiceField(
+        queryset=Asociado.objects.all(),
+        label="Titular",
+        required=False,
+        widget=forms.Select(attrs={"class": "list-select"}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        socio = cleaned.get("socio")
+        if socio and not cleaned.get("titular"):
+            cleaned["titular"] = socio
+        return cleaned
+
+    def save(self):
+        cleaned = self.cleaned_data
+        return Suministro.objects.create(socio=cleaned["socio"], titular=cleaned["titular"])
