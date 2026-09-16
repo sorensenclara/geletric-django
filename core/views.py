@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from . import associate_data as ad
@@ -106,6 +107,42 @@ def asociados_list(request):
         "localidad_filter": localidad,
         "localidades": ad.get_localidades(),
     })
+
+
+def asociados_search(request):
+    """Buscador del topbar (ver dashboard.js, initTopbarSearch): devuelve en
+    JSON los asociados que coinciden con lo tipeado, para el desplegable
+    que aparece bajo la barra — sin recargar la página. El placeholder de
+    esa barra menciona "asociado, suministro, factura, orden de trabajo",
+    pero hoy solo Asociado tiene datos y pantalla real (ver
+    associate_data.get_asociados_list); el resto se suma cuando tenga su
+    propia Historia de Usuario.
+
+    Requiere 2+ caracteres (evita devolver el padrón completo con la
+    primera letra) y devuelve como mucho 8 resultados, coincidencias por
+    nombre o N° de asociado — primero las que empiezan con lo tipeado."""
+    q = request.GET.get("q", "").strip().lower()
+    if len(q) < 2:
+        return JsonResponse({"results": []})
+
+    empieza_con = []
+    contiene = []
+    for a in ad.get_asociados_list():
+        nombre = a["nombre_completo"].lower()
+        numero = a["numero_asociado"].lower()
+        if nombre.startswith(q) or numero.startswith(q):
+            empieza_con.append(a)
+        elif q in nombre or q in numero:
+            contiene.append(a)
+
+    resultados = [{
+        "numero_asociado": a["numero_asociado"],
+        "nombre_completo": a["nombre_completo"],
+        "estado": a["estado"],
+        "href": reverse("core:asociado_ficha", kwargs={"numero_asociado": a["numero_asociado"]}),
+    } for a in (empieza_con + contiene)[:8]]
+
+    return JsonResponse({"results": resultados})
 
 
 def asociado_ficha(request, numero_asociado):

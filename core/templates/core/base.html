@@ -56,11 +56,14 @@
   <div class="main">
     <div class="topbar">
       <button class="menu-btn" id="menu-btn" type="button" aria-label="Abrir menú" aria-pressed="false"><svg class="icon"><use href="#i-menu"/></svg></button>
-      <label class="search">
-        <svg class="icon"><use href="#i-search"/></svg>
-        <input type="text" placeholder="Buscar asociado, suministro, factura, orden de trabajo…" />
-        <kbd>⌘K</kbd>
-      </label>
+      <div class="topbar-search-wrap">
+        <label class="search">
+          <svg class="icon"><use href="#i-search"/></svg>
+          <input type="text" id="topbar-search-input" placeholder="Buscar asociado, suministro, factura, orden de trabajo…" autocomplete="off" data-search-url="{% url 'core:asociados_search' %}">
+          <kbd>⌘K</kbd>
+        </label>
+        <div class="topbar-search-results" id="topbar-search-results" hidden></div>
+      </div>
       <div class="topbar-spacer"></div>
       <div class="brand-picker" role="group" aria-label="Color del sistema">
         <button class="brand-swatch brand-swatch-blue" type="button" data-brand="blue" aria-label="Azul" aria-pressed="true"></button>

@@ -11,6 +11,7 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(next_page="core:login"), name="logout"),
     path("componentes/wizard/", views.wizard_demo, name="wizard_demo"),
     path("modulos/asociados/listado/", views.asociados_list, name="asociados_list"),
+    path("modulos/asociados/buscar/", views.asociados_search, name="asociados_search"),
     path("modulos/asociados/ficha/<str:numero_asociado>/", views.asociado_ficha, name="asociado_ficha"),
     path("modulos/asociados/alta/", views.asociado_alta, name="asociado_alta"),
     path("modulos/asociados/<slug:subslug>/", views.asociado_sub, name="asociado_sub"),

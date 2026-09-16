@@ -138,6 +138,77 @@
     });
   }
 
+  // ---------- buscador del topbar (asociados reales) ----------
+  // A diferencia del buscador del sidebar (que filtra en el navegador un
+  // índice fijo de menú), este consulta core:asociados_search en el
+  // servidor — el padrón de asociados puede crecer mucho y no tiene
+  // sentido mandarlo entero al navegador. El placeholder original
+  // menciona también suministro/factura/orden de trabajo, pero esos
+  // todavía no tienen datos reales (ver la vista, del lado del server).
+  function initTopbarSearch() {
+    var input = document.getElementById("topbar-search-input");
+    var results = document.getElementById("topbar-search-results");
+    if (!input || !results) return;
+    var url = input.dataset.searchUrl;
+    if (!url) return;
+
+    var debounceTimer = null;
+    var requestId = 0;
+
+    function close() {
+      results.hidden = true;
+      results.innerHTML = "";
+    }
+
+    function renderResult(a) {
+      return '<a class="topbar-result" href="' + a.href + '">' +
+        '<svg class="icon"><use href="#i-idcard"/></svg>' +
+        '<div class="topbar-result-text"><b>' + escapeHtml(a.nombre_completo) + '</b>' +
+        '<small>N° ' + escapeHtml(a.numero_asociado) + ' — ' + escapeHtml(a.estado) + '</small></div>' +
+        '</a>';
+    }
+
+    function search(query) {
+      var thisRequest = ++requestId;
+      fetch(url + "?q=" + encodeURIComponent(query))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (thisRequest !== requestId) return; // respuesta vieja, ya no corresponde a lo tipeado
+          var matched = data.results || [];
+          results.hidden = false;
+          results.innerHTML = matched.length
+            ? matched.map(renderResult).join("")
+            : '<p class="topbar-results-empty">Sin resultados para “' + escapeHtml(query) + '”.</p>';
+        })
+        .catch(function () { close(); });
+    }
+
+    input.addEventListener("input", function () {
+      var query = input.value.trim();
+      clearTimeout(debounceTimer);
+      if (query.length < 2) { close(); return; }
+      debounceTimer = setTimeout(function () { search(query); }, 200);
+    });
+
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { close(); input.blur(); }
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!results.hidden && !results.contains(e.target) && e.target !== input) close();
+    });
+
+    // el atajo ⌘K / Ctrl+K que ya se mostraba en la barra ahora funciona:
+    // enfoca el buscador desde cualquier pantalla.
+    document.addEventListener("keydown", function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        input.focus();
+        input.select();
+      }
+    });
+  }
+
   // ---------- gráfico de línea (consumo) ----------
   function initLineChart(dataElId, mountElId) {
     var series = readJSON(dataElId);
@@ -302,6 +373,7 @@
   document.addEventListener("DOMContentLoaded", function () {
     initSidebarToggle();
     initSidebarSearch();
+    initTopbarSearch();
     initBrandPicker();
   });
 })(window);
