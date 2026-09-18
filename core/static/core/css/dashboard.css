@@ -404,41 +404,65 @@
   .asoc-menu-chevron{color:var(--text-muted);width:16px;height:16px;flex-shrink:0;}
   .asoc-menu-card:hover .asoc-menu-chevron{color:var(--sidebar-bg);}
 
+  /* Globito flotante para los íconos del sidebar colapsado (ver
+     initSidebarTooltips en dashboard.js). Es un único elemento compartido
+     que vive fuera del sidebar (base.html, #icon-tooltip) y se posiciona
+     con getBoundingClientRect() al pasar el mouse o el foco por un ítem.
+     No puede armarse con un <span> position:absolute DENTRO de cada
+     .nav-item porque el sidebar necesita overflow-y:auto para poder
+     scrollear un menú largo, y por especificación CSS eso obliga a que
+     overflow-x TAMBIÉN recorte (no hay forma de dejar solo un eje
+     "visible") — cualquier globito que se dibuje saliendo por el borde
+     derecho del sidebar quedaría cortado. */
+  .icon-tooltip{
+    position:fixed;transform:translateY(-50%);
+    background:var(--sidebar-bg-active);color:var(--sidebar-text-active);
+    font-size:12.5px;font-weight:600;white-space:nowrap;
+    padding:7px 12px;border-radius:var(--radius-sm);box-shadow:var(--shadow);
+    opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity .12s ease;
+    z-index:1000;
+  }
+  .icon-tooltip.visible{opacity:1;visibility:visible;}
+
   /* ---------- Sidebar en reposo: solo íconos + isologo compacto.
-     Al pasar el cursor (o entrar por teclado) se expande mostrando textos
-     y el isologotipo completo. Solo aplica en escritorio: en mobile el
-     sidebar ya es un cajón aparte que se abre con el botón de menú. ---------- */
+     Pasar el cursor (o entrar por teclado) sobre un ícono muestra solo el
+     globito de arriba con el nombre de esa opción — el sidebar en sí
+     sigue angosto. Para expandirlo del todo hay que "pinearlo" con el
+     botón hamburguesa del topbar (#menu-btn, ver dashboard.js), que
+     agrega/saca la clase .pinned y la guarda en localStorage para que el
+     estado se mantenga al navegar entre páginas. Solo aplica en
+     escritorio: en mobile el sidebar ya es un cajón aparte que se abre
+     con el botón de menú. ---------- */
   @media (min-width: 861px){
-    /* Colapsado (80px, solo íconos) por defecto; se expande al pasar el
-       mouse (:hover/:focus-within) o quedando "pineado" con .pinned —
-       esta última la agrega/saca el botón hamburguesa del topbar
-       (#menu-btn, ver dashboard.js) y se guarda en localStorage para que
-       el estado se mantenga al navegar entre páginas. */
     .sidebar{width:80px;}
-    .sidebar:hover, .sidebar:focus-within, .sidebar.pinned{width:252px;}
+    .sidebar.pinned{width:252px;}
 
     .brand{justify-content:center;}
-    .sidebar:hover .brand, .sidebar:focus-within .brand, .sidebar.pinned .brand{justify-content:flex-start;}
+    .sidebar.pinned .brand{justify-content:flex-start;}
     .brand-logo-full{display:none;}
     .brand-logo-icon{display:block;}
-    .sidebar:hover .brand-logo-full, .sidebar:focus-within .brand-logo-full, .sidebar.pinned .brand-logo-full{display:block;}
-    .sidebar:hover .brand-logo-icon, .sidebar:focus-within .brand-logo-icon, .sidebar.pinned .brand-logo-icon{display:none;}
+    .sidebar.pinned .brand-logo-full{display:block;}
+    .sidebar.pinned .brand-logo-icon{display:none;}
 
     .nav-item{justify-content:center;padding:9px 0;}
-    .nav-item span{display:none;white-space:nowrap;}
-    .sidebar:hover .nav-item, .sidebar:focus-within .nav-item, .sidebar.pinned .nav-item{justify-content:flex-start;padding:9px 10px;}
-    .sidebar:hover .nav-item span, .sidebar:focus-within .nav-item span, .sidebar.pinned .nav-item span{display:inline;}
+    /* Colapsado: el nombre del ítem lo muestra el globito compartido de
+       arriba (dashboard.js), así que el <span> de acá se oculta nomás. */
+    .nav-item span{display:none;}
+
+    .sidebar.pinned .nav-item{justify-content:flex-start;padding:9px 10px;}
+    .sidebar.pinned .nav-item span{display:inline;}
 
     .sidebar-divider, .sidebar-meta{display:none;}
     .energy-bar{display:none;}
-    .sidebar:hover .sidebar-divider, .sidebar:focus-within .sidebar-divider, .sidebar.pinned .sidebar-divider{display:block;}
-    .sidebar:hover .energy-bar, .sidebar:focus-within .energy-bar, .sidebar.pinned .energy-bar{display:block;}
-    .sidebar:hover .sidebar-meta, .sidebar:focus-within .sidebar-meta, .sidebar.pinned .sidebar-meta{display:flex;}
+    .sidebar.pinned .sidebar-divider{display:block;}
+    .sidebar.pinned .energy-bar{display:block;}
+    .sidebar.pinned .sidebar-meta{display:flex;}
 
     /* Buscador: solo tiene sentido si hay dónde escribir texto, así que
        se oculta colapsado igual que el resto del contenido con texto. */
     .sidebar-search-wrap{display:none;}
-    .sidebar:hover .sidebar-search-wrap, .sidebar:focus-within .sidebar-search-wrap, .sidebar.pinned .sidebar-search-wrap{display:block;}
+    .sidebar.pinned .sidebar-search-wrap{display:block;}
   }
 
   @media (max-width: 1080px){

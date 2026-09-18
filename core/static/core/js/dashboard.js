@@ -20,11 +20,13 @@
       scrim.classList.remove("open");
     }
 
-    // En desktop, el sidebar ya se expande solo con :hover/:focus-within
-    // (ver dashboard.css); "pinear" lo deja expandido aunque el mouse no
-    // esté encima, y se guarda para que se mantenga al navegar entre
-    // páginas (base.html restaura la clase antes del primer render, igual
-    // que initBrandPicker con el color del sistema).
+    // En desktop, el sidebar arranca colapsado (solo íconos); pasar el
+    // mouse sobre un ítem solo muestra su nombre en un globito (ver
+    // dashboard.css), sin expandir el resto. El botón hamburguesa es la
+    // única forma de expandirlo del todo ("pinearlo"), y ese estado se
+    // guarda para que se mantenga al navegar entre páginas (base.html
+    // restaura la clase antes del primer render, igual que initBrandPicker
+    // con el color del sistema).
     function setPinned(pinned) {
       sidebar.classList.toggle("pinned", pinned);
       menuBtn.setAttribute("aria-pressed", pinned ? "true" : "false");
@@ -53,6 +55,52 @@
     // sincroniza aria-pressed con la clase que base.html ya aplicó
     // (o no) antes de este script correr.
     menuBtn.setAttribute("aria-pressed", sidebar.classList.contains("pinned") ? "true" : "false");
+  }
+
+  // ---------- globito de nombre para los íconos (sidebar colapsado) ----------
+  // Con el sidebar colapsado, cada .nav-item oculta su <span> (ver
+  // dashboard.css) y en su lugar este script muestra un único globito
+  // compartido (#icon-tooltip, fuera del sidebar) posicionado a mano con
+  // getBoundingClientRect(). Hace falta un elemento aparte y no un
+  // <span> position:absolute dentro del ítem porque el sidebar necesita
+  // overflow-y:auto para poder scrollear un menú largo, y overflow-x
+  // queda recortado junto con él (no se puede dejar solo un eje
+  // "visible"), así que cualquier globito dibujado adentro del sidebar
+  // saliendo por su borde derecho terminaría cortado.
+  function initSidebarTooltips() {
+    var sidebar = document.getElementById("sidebar");
+    var tooltip = document.getElementById("icon-tooltip");
+    if (!sidebar || !tooltip) return;
+
+    var deskQuery = window.matchMedia("(min-width: 861px)");
+
+    function show(item) {
+      if (!deskQuery.matches || sidebar.classList.contains("pinned")) return;
+      var span = item.querySelector("span");
+      var text = span ? span.textContent : "";
+      if (!text) return;
+      var rect = item.getBoundingClientRect();
+      tooltip.textContent = text;
+      tooltip.style.top = (rect.top + rect.height / 2) + "px";
+      tooltip.style.left = (rect.right + 10) + "px";
+      tooltip.classList.add("visible");
+    }
+
+    function hide() {
+      tooltip.classList.remove("visible");
+    }
+
+    sidebar.querySelectorAll(".nav-item").forEach(function (el) {
+      el.addEventListener("mouseenter", function () { show(el); });
+      el.addEventListener("mouseleave", hide);
+      el.addEventListener("focus", function () { show(el); });
+      el.addEventListener("blur", hide);
+      el.addEventListener("click", hide);
+    });
+
+    // si cambia el ancho de ventana (o se pinea/despinea) mientras el
+    // globito está mostrado, mejor esconderlo que dejarlo mal ubicado.
+    deskQuery.addEventListener("change", hide);
   }
 
   function readJSON(id) {
@@ -372,6 +420,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     initSidebarToggle();
+    initSidebarTooltips();
     initSidebarSearch();
     initTopbarSearch();
     initBrandPicker();

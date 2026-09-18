@@ -99,6 +99,8 @@
   </div>
 </div>
 
+<div class="icon-tooltip" id="icon-tooltip" role="tooltip" aria-hidden="true"></div>
+
 {{ sidebar_search_index|json_script:"sidebar-search-data" }}
 <script src="{% static 'core/js/dashboard.js' %}"></script>
 {% block extra_js %}{% endblock %}
