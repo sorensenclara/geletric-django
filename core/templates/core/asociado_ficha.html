@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load static %}
+{% load static core_extras %}
 
 {% block title %}GELETRIC · Ficha del asociado{% endblock %}
 
@@ -103,9 +103,9 @@
 
         {% if t.kind == "table" %}
         <div class="ficha-table-wrap">
-          <table class="ficha-table">
+          <table class="ficha-table table-responsive">
             <thead><tr>{% for h in t.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
-            <tbody>{% for row in t.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+            <tbody>{% for row in t.rows %}<tr>{% for h, value in t.headers|zip:row %}{% cell h %}{{ value }}{% endcell %}{% endfor %}</tr>{% endfor %}</tbody>
           </table>
         </div>
         {% endif %}
@@ -128,16 +128,16 @@
 
         {% if t.kind == "reclamos" %}
         <div class="ficha-table-wrap">
-          <table class="ficha-table">
+          <table class="ficha-table table-responsive">
             <thead><tr>{% for h in t.headers %}<th>{{ h }}</th>{% endfor %}<th>Acción</th></tr></thead>
             <tbody>
               {% for it in t.items %}
               <tr>
-                <td>{{ it.tipo }}</td>
-                <td>{{ it.descripcion }}</td>
-                <td>{{ it.fecha }}</td>
-                <td><span class="status-pill {{ it.estado_kind }}">{{ it.estado }}</span></td>
-                <td><a class="table-link" href="#">Ver <svg class="icon"><use href="#i-chevright"/></svg></a></td>
+                {% cell t.headers.0 %}{{ it.tipo }}{% endcell %}
+                {% cell t.headers.1 %}{{ it.descripcion }}{% endcell %}
+                {% cell t.headers.2 %}{{ it.fecha }}{% endcell %}
+                {% cell t.headers.3 %}<span class="status-pill {{ it.estado_kind }}">{{ it.estado }}</span>{% endcell %}
+                {% cell "Acción" %}<a class="table-link" href="#">Ver <svg class="icon"><use href="#i-chevright"/></svg></a>{% endcell %}
               </tr>
               {% endfor %}
             </tbody>
