@@ -72,8 +72,8 @@
         <button class="brand-swatch brand-swatch-blue" type="button" data-brand="blue" aria-label="Azul" aria-pressed="true"></button>
         <button class="brand-swatch brand-swatch-green" type="button" data-brand="green" aria-label="Verde" aria-pressed="false"></button>
       </div>
-      <button class="icon-btn" type="button" aria-label="Notificaciones"><svg class="icon"><use href="#i-bell"/></svg><span class="badge-dot">3</span></button>
-      <button class="icon-btn" type="button" aria-label="Configuración"><svg class="icon"><use href="#i-gear"/></svg></button>
+      <button class="btn btn-icon btn-lg btn-ghost" type="button" aria-label="Notificaciones"><svg class="icon"><use href="#i-bell"/></svg><span class="badge-dot">3</span></button>
+      <button class="btn btn-icon btn-lg btn-ghost" type="button" aria-label="Configuración"><svg class="icon"><use href="#i-gear"/></svg></button>
       <button class="user-chip" type="button">
         <span class="avatar">{{ request.user.username|slice:":2"|upper }}</span>
         <span class="who"><b>{{ request.user.get_full_name|default:request.user.username }}</b><span>{% if request.user.is_superuser %}Administrador{% else %}Usuario{% endif %}</span></span>
@@ -81,7 +81,7 @@
       </button>
       <form method="post" action="{% url 'core:logout' %}" class="logout-form">
         {% csrf_token %}
-        <button class="icon-btn" type="submit" aria-label="Cerrar sesión"><svg class="icon"><use href="#i-logout"/></svg></button>
+        <button class="btn btn-icon btn-lg btn-ghost" type="submit" aria-label="Cerrar sesión"><svg class="icon"><use href="#i-logout"/></svg></button>
       </form>
     </div>
 

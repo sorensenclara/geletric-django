@@ -22,6 +22,52 @@
   </div>
 
   <div class="card card-pad">
+    <div class="card-head"><h3>Botones (Button System)</h3></div>
+    <p class="ficha-note">Componente global y único para toda la interfaz: una clase base <code>.btn</code> + variantes de color (<code>.btn-primary</code>, <code>.btn-secondary</code>, <code>.btn-tertiary</code>, <code>.btn-danger</code>, <code>.btn-success</code>, <code>.btn-warning</code>, <code>.btn-info</code>, <code>.btn-ghost</code>) y modificadores (<code>.btn-sm</code> / <code>.btn-lg</code>, <code>.btn-icon</code>, <code>.btn-loading</code>, <code>.btn-block</code>, <code>.btn-solid</code>).</p>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <button class="btn btn-primary" type="button"><svg class="icon"><use href="#i-plus"/></svg>Nuevo asociado</button>
+      <button class="btn btn-secondary" type="button"><svg class="icon"><use href="#i-edit"/></svg>Editar</button>
+      <button class="btn btn-tertiary" type="button">Cancelar</button>
+      <button class="btn btn-danger" type="button"><svg class="icon"><use href="#i-x"/></svg>Eliminar</button>
+      <button class="btn btn-danger btn-solid" type="button"><svg class="icon"><use href="#i-x"/></svg>Confirmar eliminación</button>
+      <button class="btn btn-ghost" type="button"><svg class="icon"><use href="#i-gear"/></svg>Configurar</button>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <button class="btn btn-success" type="button"><svg class="icon"><use href="#i-check"/></svg>Aprobar</button>
+      <button class="btn btn-warning" type="button"><svg class="icon"><use href="#i-flag"/></svg>Revisar</button>
+      <button class="btn btn-info" type="button"><svg class="icon"><use href="#i-help"/></svg>Más información</button>
+    </div>
+
+    <p class="ficha-note">Estados: disabled y loading.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;">
+      <button class="btn btn-primary" type="button" disabled><svg class="icon"><use href="#i-plus"/></svg>Nuevo asociado</button>
+      <button class="btn btn-primary btn-loading" type="button" disabled aria-disabled="true"><svg class="icon"><use href="#i-spinner"/></svg>Guardando…</button>
+    </div>
+
+    <p class="ficha-note">Tamaños (<code>.btn-sm</code> 28px / estándar 32px / <code>.btn-lg</code> 40px) y botones de solo ícono.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;">
+      <button class="btn btn-primary btn-sm" type="button"><svg class="icon"><use href="#i-plus"/></svg>Nuevo</button>
+      <button class="btn btn-primary" type="button"><svg class="icon"><use href="#i-plus"/></svg>Nuevo</button>
+      <button class="btn btn-primary btn-lg" type="button"><svg class="icon"><use href="#i-plus"/></svg>Nuevo</button>
+      <button class="btn btn-icon btn-ghost btn-sm" type="button" aria-label="Editar" title="Editar"><svg class="icon"><use href="#i-edit"/></svg></button>
+      <button class="btn btn-icon btn-ghost" type="button" aria-label="Editar" title="Editar"><svg class="icon"><use href="#i-edit"/></svg></button>
+      <button class="btn btn-icon btn-ghost btn-lg" type="button" aria-label="Más acciones" title="Más acciones"><svg class="icon"><use href="#i-more"/></svg></button>
+    </div>
+
+    <p class="ficha-note">Botón con menú desplegable (mismo lenguaje visual que el resto del sistema).</p>
+    <div class="btn-dropdown">
+      <button class="btn btn-secondary" type="button" data-dropdown-toggle="demo-export-menu" aria-expanded="false" aria-haspopup="true">Exportar<svg class="icon"><use href="#i-chevdown"/></svg></button>
+      <div class="btn-dropdown-menu" id="demo-export-menu" hidden>
+        <button class="btn-dropdown-item" type="button"><svg class="icon"><use href="#i-file"/></svg>Exportar CSV</button>
+        <button class="btn-dropdown-item" type="button"><svg class="icon"><use href="#i-file-out"/></svg>Exportar PDF</button>
+        <button class="btn-dropdown-item" type="button"><svg class="icon"><use href="#i-file"/></svg>Exportar Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-pad">
     <div class="card-head"><h3>Carteles de alerta (formularios y avisos)</h3></div>
     <p class="ficha-note">Mismo componente reutilizable, en sus 3 variantes de estado.</p>
 

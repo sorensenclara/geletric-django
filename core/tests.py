@@ -435,6 +435,169 @@ class AssociateDataTests(TestCase):
         self.assertIn("proveedor", [t["id"] for t in tabs])
 
 
+class BuscarAsociadosTests(TestCase):
+    """Tests del buscador general + filtros avanzados del listado de
+    asociados (ad.buscar_asociados / ad.get_filtros_disponibles) — a pedido
+    de Clara, filtrando directamente sobre el QuerySet de Asociado en vez
+    de post-procesar la lista de get_asociados_list() (que sigue sin
+    tocarse, ver AssociateDataTests)."""
+
+    def _crear_tres(self):
+        juan = _crear(_datos_real(
+            numero_documento="11111111", nombre_apellido="Juan Pérez",
+        ))
+        juan.localidad = "San Manuel"
+        juan.email = "juan@example.com"
+        juan.domicilio = "San Martín 350"
+        juan.categoria = "Residencial"
+        juan.save()
+
+        ana = _crear(_datos_real(
+            numero_documento="22222222", nombre_apellido="Ana Gómez",
+        ))
+        ana.localidad = "Gardey"
+        ana.celular = "249555-1234"
+        ana.categoria = "Comercial"
+        ana.estado_societario = "inactivo"
+        ana.domicilio = "Rivadavia 980"
+        ana.save()
+
+        cooperativa = _crear(_datos_ideal(numero_documento="30712121218"))
+        cooperativa.localidad = "San Manuel"
+        cooperativa.es_proveedor = True
+        cooperativa.domicilio = "Ruta 30, zona industrial"
+        cooperativa.save()
+
+        return juan, ana, cooperativa
+
+    def test_sin_criterios_devuelve_todos(self):
+        self._crear_tres()
+        self.assertEqual(len(ad.buscar_asociados()), 3)
+
+    def test_busqueda_general_cruza_varios_campos(self):
+        juan, ana, cooperativa = self._crear_tres()
+
+        self.assertEqual(
+            [f["numero_asociado"] for f in ad.buscar_asociados(q="Pérez")],
+            [juan.numero_asociado],
+        )
+        self.assertEqual(
+            [f["numero_asociado"] for f in ad.buscar_asociados(q="22222222")],
+            [ana.numero_asociado],
+        )
+        self.assertEqual(
+            [f["numero_asociado"] for f in ad.buscar_asociados(q="San Martín")],
+            [juan.numero_asociado],
+        )
+        self.assertEqual(
+            [f["numero_asociado"] for f in ad.buscar_asociados(q="juan@example.com")],
+            [juan.numero_asociado],
+        )
+        self.assertEqual(
+            [f["numero_asociado"] for f in ad.buscar_asociados(q="249555")],
+            [ana.numero_asociado],
+        )
+        self.assertEqual(ad.buscar_asociados(q="no existe ningún asociado así"), [])
+
+    def test_filtros_avanzados_se_combinan_con_and(self):
+        juan, ana, cooperativa = self._crear_tres()
+
+        resultado = ad.buscar_asociados(filtros={"localidad": "San Manuel"})
+        self.assertEqual(
+            {f["numero_asociado"] for f in resultado},
+            {juan.numero_asociado, cooperativa.numero_asociado},
+        )
+
+        resultado = ad.buscar_asociados(filtros={
+            "localidad": "San Manuel", "es_proveedor": "si",
+        })
+        self.assertEqual(
+            [f["numero_asociado"] for f in resultado],
+            [cooperativa.numero_asociado],
+        )
+
+        resultado = ad.buscar_asociados(filtros={
+            "localidad": "San Manuel", "es_proveedor": "no",
+        })
+        self.assertEqual(
+            [f["numero_asociado"] for f in resultado],
+            [juan.numero_asociado],
+        )
+
+    def test_filtro_estado_societario(self):
+        juan, ana, cooperativa = self._crear_tres()
+        resultado = ad.buscar_asociados(filtros={"estado": "inactivo"})
+        self.assertEqual([f["numero_asociado"] for f in resultado], [ana.numero_asociado])
+
+    def test_filtro_categoria_valores_existentes(self):
+        juan, ana, cooperativa = self._crear_tres()
+        self.assertEqual(
+            [f["numero_asociado"] for f in ad.buscar_asociados(filtros={"categoria": "Comercial"})],
+            [ana.numero_asociado],
+        )
+
+    def test_filtro_dni_cuit_busca_en_ambos_campos(self):
+        juan, ana, cooperativa = self._crear_tres()
+        self.assertEqual(
+            [f["numero_asociado"] for f in ad.buscar_asociados(filtros={"dni_cuit": "11111111"})],
+            [juan.numero_asociado],
+        )
+        self.assertEqual(
+            [f["numero_asociado"] for f in ad.buscar_asociados(filtros={"dni_cuit": "30712121218"})],
+            [cooperativa.numero_asociado],
+        )
+
+    def test_filtro_direccion_texto_libre(self):
+        juan, ana, cooperativa = self._crear_tres()
+        self.assertEqual(
+            [f["numero_asociado"] for f in ad.buscar_asociados(filtros={"direccion": "San Martín"})],
+            [juan.numero_asociado],
+        )
+
+    def test_filtro_fecha_ingreso_rango(self):
+        juan, ana, cooperativa = self._crear_tres()
+        juan.fecha_ingreso = datetime.date(2026, 1, 10)
+        juan.save()
+        ana.fecha_ingreso = datetime.date(2026, 6, 15)
+        ana.save()
+
+        resultado = ad.buscar_asociados(filtros={
+            "fecha_ingreso": {"desde": "2026-01-01", "hasta": "2026-02-01"},
+        })
+        self.assertEqual([f["numero_asociado"] for f in resultado], [juan.numero_asociado])
+
+        resultado = ad.buscar_asociados(filtros={
+            "fecha_ingreso": {"desde": "2026-06-01"},
+        })
+        self.assertEqual(
+            {f["numero_asociado"] for f in resultado},
+            {ana.numero_asociado, cooperativa.numero_asociado},
+        )
+
+    def test_filtro_fecha_invalida_se_ignora_sin_romper(self):
+        self._crear_tres()
+        resultado = ad.buscar_asociados(filtros={
+            "fecha_ingreso": {"desde": "no-es-una-fecha", "hasta": ""},
+        })
+        self.assertEqual(len(resultado), 3)
+
+    def test_get_filtros_disponibles_incluye_opciones_dinamicas(self):
+        self._crear_tres()
+        filtros = {f["key"]: f for f in ad.get_filtros_disponibles()}
+
+        self.assertEqual(
+            {o["value"] for o in filtros["localidad"]["options"]},
+            {"San Manuel", "Gardey"},
+        )
+        self.assertEqual(
+            {o["value"] for o in filtros["categoria"]["options"]},
+            {"Residencial", "Comercial"},
+        )
+        self.assertEqual(filtros["fecha_ingreso"]["type"], "daterange")
+        self.assertEqual(filtros["fecha_ingreso"]["params"], ["fecha_ingreso_desde", "fecha_ingreso_hasta"])
+        self.assertNotIn("rol", filtros)
+
+
 class SeedAsociadosCommandTests(TestCase):
     """Tests del comando de siembra (core/management/commands/seed_asociados
     .py): idempotencia, cantidad de registros y validez de los datos

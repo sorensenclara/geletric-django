@@ -26,6 +26,10 @@ solo si es_proveedor está tildado. No hay todavía una forma de dar de alta
 un asociado que sea nada más "Usuario" (como sí había en los datos de
 muestra) — si el DEV confirma ese caso como real, hay que revisar acá.
 """
+import datetime
+
+from django.db.models import Q
+
 from .models import Asociado, SuscripcionAcciones
 
 
@@ -92,6 +96,215 @@ def get_localidades():
         .distinct()
     )
     return sorted(set(localidades))
+
+
+def get_categorias():
+    """Categorías presentes entre los asociados reales, para el filtro de
+    categoría del listado — mismo criterio que get_localidades(): es un
+    CharField de texto libre en el modelo, pero el filtro solo ofrece los
+    valores que ya están en uso."""
+    categorias = (
+        Asociado.objects.exclude(categoria="")
+        .values_list("categoria", flat=True)
+        .distinct()
+    )
+    return sorted(set(categorias))
+
+
+# ---------- Buscador general + filtros avanzados del listado ----------
+# Definición de los filtros que el listado de asociados ofrece agregar con
+# "+ Agregar filtro" (ver asociados_list.html / dashboard.js,
+# initDynamicFilterBuilder). Cada entrada define:
+#   key     — también el nombre del parámetro GET (salvo "daterange", que
+#             usa "params" en su lugar porque necesita dos).
+#   label   — lo que ve el usuario.
+#   type    — "select" | "boolean" | "text" | "daterange": decide qué
+#             control se dibuja (ver el template y el JS).
+#   options — solo para "select"/"boolean": [{"value", "label"}, ...].
+#   params  — solo para "daterange": [param_desde, param_hasta].
+# Se arma de nuevo en cada pedido (no es una constante de módulo) porque
+# "localidad" y "categoria" dependen de los datos reales cargados en ese
+# momento — igual que ya hacía el <select> de localidad del listado
+# anterior con get_localidades().
+def get_filtros_disponibles():
+    # "icon" es solo una referencia al sprite de íconos ya existente
+    # (core/templates/core/_icon_sprite.html) — ayuda a escanear el menú
+    # "+ Agregar filtro" del listado, no afecta el filtrado en absoluto.
+    return [
+        {
+            "key": "estado",
+            "label": "Estado societario",
+            "type": "select",
+            "icon": "i-check",
+            "options": [
+                {"value": value, "label": label}
+                for value, label in Asociado.ESTADO_SOCIETARIO_CHOICES
+            ],
+        },
+        {
+            "key": "localidad",
+            "label": "Localidad",
+            "type": "select",
+            "icon": "i-map",
+            "options": [{"value": loc, "label": loc} for loc in get_localidades()],
+        },
+        {
+            "key": "tipo_persona",
+            "label": "Tipo de persona",
+            "type": "select",
+            "icon": "i-user",
+            "options": [
+                {"value": value, "label": label}
+                for value, label in Asociado.TIPO_PERSONA_CHOICES
+            ],
+        },
+        {
+            "key": "condicion_iva",
+            "label": "Condición de IVA",
+            "type": "select",
+            "icon": "i-file",
+            "options": [
+                {"value": value, "label": label}
+                for value, label in Asociado.CONDICION_IVA_CHOICES
+            ],
+        },
+        {
+            "key": "categoria",
+            "label": "Categoría",
+            "type": "select",
+            "icon": "i-flag",
+            "options": [{"value": cat, "label": cat} for cat in get_categorias()],
+        },
+        {
+            "key": "es_proveedor",
+            "label": "Proveedor",
+            "type": "boolean",
+            "icon": "i-cart",
+            "options": [{"value": "si", "label": "Sí"}, {"value": "no", "label": "No"}],
+        },
+        {
+            "key": "fecha_ingreso",
+            "label": "Fecha de ingreso",
+            "type": "daterange",
+            "icon": "i-calendar",
+            "params": ["fecha_ingreso_desde", "fecha_ingreso_hasta"],
+        },
+        {
+            "key": "dni_cuit",
+            "label": "DNI/CUIT",
+            "type": "text",
+            "icon": "i-idcard",
+        },
+        {
+            "key": "direccion",
+            "label": "Dirección",
+            "type": "text",
+            "icon": "i-map",
+        },
+    ]
+
+
+def _parsear_fecha(valor):
+    """Convierte "YYYY-MM-DD" (lo que manda un <input type="date">) a
+    date, o None si viene vacío/mal formado — un filtro de fecha inválido
+    o incompleto se ignora en vez de romper la consulta."""
+    if not valor:
+        return None
+    try:
+        return datetime.date.fromisoformat(valor)
+    except (TypeError, ValueError):
+        return None
+
+
+def buscar_asociados(q="", filtros=None):
+    """Listado filtrable de asociados (HU de búsqueda y filtros avanzados
+    del listado): a diferencia de get_asociados_list(), que sigue
+    devolviendo SIEMPRE todos los asociados sin filtrar —la usan
+    asociados_search (buscador del topbar) y los tests de
+    AssociateDataTests, que no deben cambiar de comportamiento—, acá el
+    buscador general y cada filtro avanzado se resuelven como condiciones
+    sobre el QuerySet de Asociado (Q() combinados con OR para el buscador
+    general, .filter() encadenado —AND— para cada filtro activo) antes de
+    tocar un solo registro en Python; recién con el QuerySet ya filtrado se
+    arma la lista de diccionarios que consume el template, igual que hacía
+    get_asociados_list().
+
+    `filtros` es un dict {key: valor} con solo los filtros ACTIVOS (ver
+    views.asociados_list, que arma este dict a partir de la querystring) —
+    "es_proveedor" espera "si"/"no", "fecha_ingreso" espera
+    {"desde": ..., "hasta": ...} (ambas claves opcionales), el resto espera
+    el string tal cual viene del <select>/<input>.
+
+    Ninguno de estos filtros cruza relaciones (SuscripcionAcciones,
+    Suministro) — son todos campos propios de Asociado — así que no hace
+    falta select_related/prefetch_related ni .distinct() para evitar filas
+    duplicadas. Si en algún momento se agrega un filtro que sí cruce una
+    relación (por ejemplo, por datos de Suministro), hay que revisar esto:
+    un .filter() sobre una relación "a muchos" puede multiplicar filas."""
+    filtros = filtros or {}
+    queryset = Asociado.objects.all()
+
+    q = (q or "").strip()
+    if q:
+        queryset = queryset.filter(
+            Q(nombre_apellido__icontains=q)
+            | Q(razon_social__icontains=q)
+            | Q(numero_asociado__icontains=q)
+            | Q(numero_usuario__icontains=q)
+            | Q(numero_documento__icontains=q)
+            | Q(cuit__icontains=q)
+            | Q(domicilio__icontains=q)
+            | Q(localidad__icontains=q)
+            | Q(telefono_fijo__icontains=q)
+            | Q(celular__icontains=q)
+            | Q(email__icontains=q)
+            | Q(email_alternativo__icontains=q)
+        )
+
+    estado = filtros.get("estado")
+    if estado:
+        queryset = queryset.filter(estado_societario=estado)
+
+    localidad = filtros.get("localidad")
+    if localidad:
+        queryset = queryset.filter(localidad=localidad)
+
+    tipo_persona = filtros.get("tipo_persona")
+    if tipo_persona:
+        queryset = queryset.filter(tipo_persona=tipo_persona)
+
+    condicion_iva = filtros.get("condicion_iva")
+    if condicion_iva:
+        queryset = queryset.filter(condicion_iva=condicion_iva)
+
+    categoria = filtros.get("categoria")
+    if categoria:
+        queryset = queryset.filter(categoria=categoria)
+
+    es_proveedor = filtros.get("es_proveedor")
+    if es_proveedor in ("si", "no"):
+        queryset = queryset.filter(es_proveedor=(es_proveedor == "si"))
+
+    fecha_ingreso = filtros.get("fecha_ingreso")
+    if fecha_ingreso:
+        desde = _parsear_fecha(fecha_ingreso.get("desde"))
+        hasta = _parsear_fecha(fecha_ingreso.get("hasta"))
+        if desde:
+            queryset = queryset.filter(fecha_ingreso__gte=desde)
+        if hasta:
+            queryset = queryset.filter(fecha_ingreso__lte=hasta)
+
+    dni_cuit = filtros.get("dni_cuit")
+    if dni_cuit:
+        queryset = queryset.filter(
+            Q(numero_documento__icontains=dni_cuit) | Q(cuit__icontains=dni_cuit)
+        )
+
+    direccion = filtros.get("direccion")
+    if direccion:
+        queryset = queryset.filter(domicilio__icontains=direccion)
+
+    return [_asociado_a_dict_listado(a) for a in queryset]
 
 
 def get_associate(numero_asociado=None):
