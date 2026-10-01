@@ -36,6 +36,9 @@
         <span class="auth-input-wrap{% if form.password.errors %} error{% endif %}">
           <svg class="icon"><use href="#i-lock"/></svg>
           {{ form.password }}
+          <button type="button" class="auth-pw-toggle" id="auth-pw-toggle" aria-label="Mostrar contraseña" aria-pressed="false">
+            <svg class="icon"><use href="#i-eye"/></svg>
+          </button>
         </span>
         {% for error in form.password.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
       </label>
@@ -50,4 +53,25 @@
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Ojito mostrar/ocultar contraseña: alterna el type del <input> de
+  // Django (id_password, autogenerado) entre password/text y cambia el
+  // ícono — no depende de dashboard.js porque el login no lo carga.
+  var toggle = document.getElementById('auth-pw-toggle');
+  if (!toggle) return;
+  var input = toggle.closest('.auth-input-wrap').querySelector('input');
+  var use = toggle.querySelector('use');
+  toggle.addEventListener('click', function () {
+    var showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    use.setAttribute('href', showing ? '#i-eye' : '#i-eye-off');
+    toggle.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
+    toggle.setAttribute('aria-pressed', showing ? 'false' : 'true');
+  });
+});
+</script>
 {% endblock %}
