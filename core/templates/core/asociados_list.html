@@ -19,34 +19,72 @@
     <form method="get" class="list-toolbar">
       <label class="list-search">
         <svg class="icon"><use href="#i-search"/></svg>
-        <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o N° de asociado…">
+        <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre, DNI/CUIT, dirección, teléfono o email…">
       </label>
-      <button type="button" class="filters-toggle{% if estado_filter or rol_filter or localidad_filter %} active{% endif %}" data-filters-toggle aria-expanded="false" aria-controls="list-filters-panel">
-        <svg class="icon"><use href="#i-filter"/></svg>
-        <span>Filtros</span>
-        <svg class="icon filters-toggle-chev"><use href="#i-chevdown"/></svg>
-      </button>
-      <div class="list-filters-panel" id="list-filters-panel">
-        <select name="estado" class="list-select">
-          <option value="">Estado (todos)</option>
-          <option value="Activo"{% if estado_filter == "Activo" %} selected{% endif %}>Activo</option>
-          <option value="Inactivo"{% if estado_filter == "Inactivo" %} selected{% endif %}>Inactivo</option>
-        </select>
-        <select name="rol" class="list-select">
-          <option value="">Rol (todos)</option>
-          <option value="Asociado"{% if rol_filter == "Asociado" %} selected{% endif %}>Asociado</option>
-          <option value="Usuario"{% if rol_filter == "Usuario" %} selected{% endif %}>Usuario</option>
-          <option value="Proveedor"{% if rol_filter == "Proveedor" %} selected{% endif %}>Proveedor</option>
-        </select>
-        <select name="localidad" class="list-select">
-          <option value="">Localidad (todas)</option>
-          {% for loc in localidades %}
-          <option value="{{ loc }}"{% if localidad_filter == loc %} selected{% endif %}>{{ loc }}</option>
-          {% endfor %}
-        </select>
-        <button class="btn-secondary" type="submit"><svg class="icon"><use href="#i-search"/></svg>Filtrar</button>
-        {% if q or estado_filter or rol_filter or localidad_filter %}
-        <a class="btn-secondary" href="{% url 'core:asociados_list' %}"><svg class="icon"><use href="#i-x"/></svg>Limpiar</a>
+
+      {{ filtros_disponibles|json_script:"filtros-disponibles-data" }}
+      {% comment %}
+        "campos_visibles": las keys (separadas por coma) de los filtros
+        agregados a la interfaz, tengan o no valor todavía — dashboard.js
+        lo mantiene al día (initDynamicFilterBuilder) cada vez que se
+        agrega o se quita un field, y viaja en el próximo submit para que
+        la vista sepa qué reconstruir como "visible" sin depender de si
+        ese filtro terminó teniendo un valor (ver views.asociados_list).
+      {% endcomment %}
+      <input type="hidden" name="campos_visibles" id="campos-visibles-input" value="{{ campos_visibles_actual }}">
+
+      <div class="filter-fields-row" id="filter-fields-row">
+        {% for f in filtros_disponibles %}
+        {% if f.visible %}
+        <div class="filter-field" data-filter-key="{{ f.key }}">
+          <div class="filter-field-head">
+            <span class="filter-field-label">{{ f.label }}</span>
+            <button type="button" class="filter-field-remove" data-remove-filter aria-label="Quitar filtro {{ f.label }}">
+              <svg class="icon"><use href="#i-x"/></svg>
+            </button>
+          </div>
+          {% if f.type == "text" %}
+          <input type="text" name="{{ f.key }}" class="filter-field-control filter-field-input" value="{{ f.value }}" placeholder="{{ f.label }}">
+          {% elif f.type == "daterange" %}
+          <span class="filter-field-daterange">
+            <input type="date" name="{{ f.params.0 }}" class="filter-field-control" value="{{ f.desde }}" aria-label="{{ f.label }} desde">
+            <span class="filter-field-daterange-sep">–</span>
+            <input type="date" name="{{ f.params.1 }}" class="filter-field-control" value="{{ f.hasta }}" aria-label="{{ f.label }} hasta">
+          </span>
+          {% else %}
+          <span class="filter-field-select-wrap">
+            <select name="{{ f.key }}" class="filter-field-control filter-field-select">
+              <option value="">Todos</option>
+              {% for o in f.options %}
+              <option value="{{ o.value }}"{% if f.value == o.value %} selected{% endif %}>{{ o.label }}</option>
+              {% endfor %}
+            </select>
+            <svg class="icon filter-field-chevron"><use href="#i-chevdown"/></svg>
+          </span>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="filter-fields-actions">
+        <div class="btn-dropdown">
+          <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle="add-filter-menu" aria-expanded="false" aria-haspopup="true">
+            <svg class="icon"><use href="#i-plus"/></svg>Agregar filtro<svg class="icon"><use href="#i-chevdown"/></svg>
+          </button>
+          <div class="btn-dropdown-menu" id="add-filter-menu" hidden>
+            {% for f in filtros_disponibles %}
+            <button type="button" class="btn-dropdown-item" data-add-filter="{{ f.key }}"{% if f.visible %} hidden{% endif %}>
+              <svg class="icon"><use href="#{{ f.icon }}"/></svg>{{ f.label }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" type="submit">
+          <svg class="icon"><use href="#i-search"/></svg>Filtrar
+        </button>
+        {% if hay_filtros_activos %}
+        <a class="btn btn-tertiary btn-sm" href="{% url 'core:asociados_list' %}"><svg class="icon"><use href="#i-x"/></svg>Limpiar filtros</a>
         {% endif %}
       </div>
     </form>

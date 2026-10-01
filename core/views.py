@@ -8,6 +8,7 @@ from django.utils import timezone
 from . import associate_data as ad
 from . import sample_data as sd
 from .forms import AsociadoAltaForm, GeletricLoginForm
+from .models import Asociado
 from .modules_data import get_module
 
 
@@ -73,39 +74,75 @@ def module_detail(request, slug):
 
 
 def asociados_list(request):
-    """Listado de asociados: paso previo a la ficha (buscador por nombre/N°
-    de asociado + filtros de estado/rol/localidad). Datos reales desde el
-    14/09/2026 — ver associate_data.get_asociados_list()."""
+    """Listado de asociados: paso previo a la ficha. Buscador general +
+    filtros avanzados agregables ("+ Agregar filtro"), a pedido de Clara —
+    ver associate_data.buscar_asociados() y get_filtros_disponibles() para
+    el detalle. A diferencia de la versión anterior, acá el filtrado se
+    resuelve en el QuerySet de Asociado, no sobre la lista ya materializada
+    de get_asociados_list() (esa función sigue existiendo tal cual, la usan
+    asociados_search y los tests de AssociateDataTests).
+
+    filtros_disponibles viaja al template con cada filtro ya resuelto
+    contra la querystring, con DOS claves distintas que no hay que
+    confundir:
+      - "active"  — tiene un valor real cargado, lo que lo vuelve parte
+                     del QuerySet (ver filtros_valores más abajo) y cuenta
+                     para hay_filtros_activos / "Limpiar filtros".
+      - "visible" — el usuario lo agregó a la interfaz con
+                     "+ Agregar filtro", tenga o no un valor todavía. Se
+                     reconstruye a partir de "campos_visibles" (un único
+                     parámetro con las keys separadas por coma que
+                     dashboard.js mantiene sincronizado con los filtros
+                     agregados — ver initDynamicFilterBuilder) en vez de
+                     inferirlo del valor, precisamente para poder tener en
+                     pantalla un filtro agregado pero todavía vacío (p.ej.
+                     agregaste Categoría y Estado pero solo completaste
+                     Localidad, y presionaste "Filtrar" así): si "visible"
+                     dependiera de "active" como antes, esos dos
+                     desaparecerían al recargar por estar vacíos.
+    El template dibuja cada filtro agregado según "visible" (no "active"),
+    y el JS sabe cuáles faltan ofrecer en "+ Agregar filtro" también según
+    "visible"."""
     q = request.GET.get("q", "").strip()
-    estado = request.GET.get("estado", "")
-    rol = request.GET.get("rol", "")
-    localidad = request.GET.get("localidad", "")
 
-    asociados = ad.get_asociados_list()
+    campos_visibles_set = {
+        c.strip() for c in request.GET.get("campos_visibles", "").split(",") if c.strip()
+    }
 
-    if q:
-        q_lower = q.lower()
-        asociados = [
-            a for a in asociados
-            if q_lower in a["nombre_completo"].lower() or q_lower in a["numero_asociado"]
-        ]
-    if estado:
-        asociados = [a for a in asociados if a["estado"] == estado]
-    if rol:
-        asociados = [a for a in asociados if rol in a["roles"]]
-    if localidad:
-        asociados = [a for a in asociados if a["localidad"] == localidad]
+    filtros_disponibles = ad.get_filtros_disponibles()
+    filtros_valores = {}
+
+    for filtro in filtros_disponibles:
+        if filtro["type"] == "daterange":
+            desde_param, hasta_param = filtro["params"]
+            desde = request.GET.get(desde_param, "").strip()
+            hasta = request.GET.get(hasta_param, "").strip()
+            filtro["desde"] = desde
+            filtro["hasta"] = hasta
+            filtro["active"] = bool(desde or hasta)
+            if filtro["active"]:
+                filtros_valores[filtro["key"]] = {"desde": desde, "hasta": hasta}
+        else:
+            valor = request.GET.get(filtro["key"], "").strip()
+            filtro["value"] = valor
+            filtro["active"] = bool(valor)
+            if filtro["active"]:
+                filtros_valores[filtro["key"]] = valor
+        filtro["visible"] = filtro["active"] or filtro["key"] in campos_visibles_set
+
+    asociados = ad.buscar_asociados(q=q, filtros=filtros_valores)
+    hay_filtros_activos = bool(q) or any(f["active"] for f in filtros_disponibles)
+    campos_visibles_actual = ",".join(f["key"] for f in filtros_disponibles if f["visible"])
 
     return render(request, "core/asociados_list.html", {
         "active_slug": "asociados",
         "module": get_module("asociados"),
         "asociados": asociados,
-        "total_asociados": len(ad.get_asociados_list()),
+        "total_asociados": Asociado.objects.count(),
         "q": q,
-        "estado_filter": estado,
-        "rol_filter": rol,
-        "localidad_filter": localidad,
-        "localidades": ad.get_localidades(),
+        "filtros_disponibles": filtros_disponibles,
+        "hay_filtros_activos": hay_filtros_activos,
+        "campos_visibles_actual": campos_visibles_actual,
     })
 
 

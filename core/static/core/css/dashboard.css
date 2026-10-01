@@ -30,6 +30,7 @@
     --status-warning:#e0972b;
     --status-critical:#e5484d;
     --status-neutral:#8991a8;
+    --status-info:#1d4fa8;
 
     --mod-purple:#3c3489;   --mod-purple-bg:color-mix(in srgb, var(--mod-purple) 11%, white);
     --mod-coral:#993c1d;    --mod-coral-bg:color-mix(in srgb, var(--mod-coral) 11%, white);
@@ -73,8 +74,8 @@
 
   /* ---------- Selector de color del sistema (azul / verde) ----------
      Retinta el sidebar y los acentos que usan --brand-blue / --brand-blue-ink
-     (eyebrow, ícono de la fecha, link-btn, línea del gráfico de consumo que
-     la lee vía var() desde dashboard.js). --brand-accent-bg no se redefine
+     (eyebrow, ícono de la fecha, línea del gráfico de consumo que la lee vía
+     var() desde dashboard.js). --brand-accent-bg no se redefine
      acá: como es color-mix(...,var(--sidebar-bg),...), toma solo el
      --sidebar-bg ya retintado arriba — por eso los íconos de Asociados y
      servicios (que usan var(--sidebar-bg)/var(--brand-accent-bg), no
@@ -178,8 +179,6 @@
   .brand-swatch-green{background:#1b6b4c;}
   .brand-swatch[aria-pressed="true"]{border-color:var(--text-secondary);}
   .brand-swatch:hover{filter:brightness(1.15);}
-  .icon-btn{position:relative;width:38px;height:38px;border-radius:var(--radius-sm);border:1px solid transparent;background:none;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
-  .icon-btn:hover{background:var(--surface-2);border-color:var(--border);}
   .badge-dot{position:absolute;top:5px;right:6px;background:var(--status-critical);color:#fff;font-size:9.5px;font-weight:600;min-width:14px;height:14px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
   .user-chip{display:flex;align-items:center;gap:9px;padding:5px 8px 5px 5px;border-radius:999px;border:1px solid var(--border);background:var(--surface);cursor:pointer;}
   .avatar{width:28px;height:28px;border-radius:999px;background:var(--brand-green);color:#fff;font-family:var(--font-display);font-weight:700;font-size:11.5px;display:flex;align-items:center;justify-content:center;}
@@ -206,9 +205,6 @@
   .card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;}
   .card-head h3{font-size:18px;font-weight:700;}
   .card-head .count{background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;margin-left:6px;}
-  .link-btn{background:none;border:none;color:var(--brand-blue-ink);font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:3px;padding:2px;}
-  .link-btn .icon{width:13px;height:13px;}
-
   /* stat cards */
   .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
   .stat-card{padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
@@ -314,9 +310,125 @@
   .status-chip.good{color:var(--status-good);border-color:color-mix(in srgb, var(--status-good) 30%, var(--border));background:color-mix(in srgb, var(--status-good) 10%, var(--surface-2));}
   .status-chip.good i{background:var(--status-good);}
 
-  .btn-primary{display:inline-flex;align-items:center;gap:7px;background:var(--sidebar-bg);border:1px solid var(--sidebar-bg);border-radius:var(--radius-btn);color:#fff;font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 16px;cursor:pointer;}
+  /* ---------- Sistema de botones (Button System) ----------
+     Componente global y único para toda la interfaz: una clase base .btn
+     con todo lo común (altura, tipografía, radio, íconos, foco, estado
+     disabled) + variantes de color que solo definen la diferencia. Nunca
+     se usa una variante sola: siempre junto a .btn, por ejemplo
+     class="btn btn-primary". Funciona igual en <button> y en <a>.
+
+     Color: Primary/Secondary/Tertiary usan var(--sidebar-bg) y
+     var(--sidebar-bg-active) — las mismas variables que ya sigue el
+     selector de marca azul/verde (ver bloque [data-brand="green"] más
+     arriba) — así que automáticamente cambian de color si cambia la
+     marca, sin tocar este archivo. Danger/Success/Warning/Info usan los
+     --status-*, que son fijos y no siguen la marca. Success/Warning/Info
+     reutilizan el mismo criterio de "tinte suave" (color-mix con blanco)
+     que ya usan .status-pill y .alert-banner, para mantener un único
+     lenguaje visual de color semántico en todo el sistema.
+
+     Tamaños: .btn-sm (28px) / sin modificador (32px, el estándar) /
+     .btn-lg (40px). .btn-icon es la variante cuadrada para botones de
+     solo ícono (editar, eliminar, "⋯"). .btn-loading deshabilita el
+     botón y gira su ícono (pensado para usarse con el ícono #i-spinner
+     y el texto cambiado a algo como "Guardando..."). .btn-block lo hace
+     100% de ancho (nunca automático en mobile — hay que sumarlo a
+     propósito). */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    height:32px;padding:0 16px;
+    border-radius:var(--radius-btn);border:1px solid transparent;
+    font-family:var(--font-body);font-size:13px;font-weight:600;line-height:1;
+    cursor:pointer;white-space:nowrap;text-decoration:none;
+    transition:background-color .12s ease, border-color .12s ease, color .12s ease, opacity .12s ease;
+    vertical-align:middle;
+  }
+  .btn .icon{width:16px;height:16px;flex-shrink:0;}
+  .btn:focus-visible{outline:2px solid var(--sidebar-bg);outline-offset:2px;}
+  .btn:disabled, .btn.btn-disabled, .btn[aria-disabled="true"]{
+    opacity:.5;cursor:not-allowed;pointer-events:none;
+  }
+
+  /* tamaños */
+  .btn-sm{height:28px;padding:0 12px;font-size:12px;gap:6px;}
+  .btn-sm .icon{width:14px;height:14px;}
+  .btn-lg{height:40px;padding:0 20px;font-size:14px;gap:8px;}
+  .btn-lg .icon{width:18px;height:18px;}
+
+  /* ancho completo — opcional, nunca automático en mobile */
+  .btn-block{width:100%;}
+
+  /* solo ícono — mismo alto que el tamaño activo, ancho = alto */
+  .btn-icon{width:32px;padding:0;gap:0;position:relative;}
+  .btn-icon.btn-sm{width:28px;}
+  .btn-icon.btn-lg{width:40px;}
+
+  /* Primary — acción principal de la pantalla */
+  .btn-primary{background:var(--sidebar-bg);border-color:var(--sidebar-bg);color:#fff;}
   .btn-primary:hover{background:var(--sidebar-bg-active);border-color:var(--sidebar-bg-active);}
-  .btn-primary .icon{width:16px;height:16px;}
+  .btn-primary:active{background:var(--sidebar-brand-bg);border-color:var(--sidebar-brand-bg);}
+
+  /* Secondary — importante pero no es la acción principal */
+  .btn-secondary{background:none;border-color:var(--sidebar-bg);color:var(--sidebar-bg);}
+  .btn-secondary:hover{background:var(--brand-accent-bg);}
+  .btn-secondary:active{background:var(--brand-accent-bg);border-color:var(--sidebar-bg-active);color:var(--sidebar-bg-active);}
+
+  /* Tertiary — menor jerarquía (Ver más, Cancelar, Volver, Limpiar filtros) */
+  .btn-tertiary{background:none;border-color:transparent;color:var(--sidebar-bg);}
+  .btn-tertiary:hover{background:var(--brand-accent-bg);}
+  .btn-tertiary:active{background:var(--brand-accent-bg);color:var(--sidebar-bg-active);}
+
+  /* Ghost — jerarquía mínima: configuración, "⋯", controles auxiliares */
+  .btn-ghost{background:none;border-color:transparent;color:var(--text-secondary);}
+  .btn-ghost:hover{background:var(--surface-2);border-color:var(--border);}
+  .btn-ghost:active{background:var(--surface);border-color:var(--border-strong);}
+
+  /* Danger — acciones destructivas. Outline es el comportamiento normal;
+     .btn-solid es solo para confirmaciones destructivas importantes
+     (no usar el color rojo para acciones que no sean estas). */
+  .btn-danger{background:none;border-color:var(--status-critical);color:var(--status-critical);}
+  .btn-danger:hover{background:color-mix(in srgb, var(--status-critical) 10%, white);}
+  .btn-danger:active{background:color-mix(in srgb, var(--status-critical) 18%, white);}
+  .btn-danger.btn-solid{background:var(--status-critical);border-color:var(--status-critical);color:#fff;}
+  .btn-danger.btn-solid:hover{background:color-mix(in srgb, var(--status-critical) 85%, black);border-color:color-mix(in srgb, var(--status-critical) 85%, black);}
+  .btn-danger.btn-solid:active{background:color-mix(in srgb, var(--status-critical) 70%, black);border-color:color-mix(in srgb, var(--status-critical) 70%, black);}
+
+  /* Success / Warning / Info — mismo criterio de tinte suave que ya usan
+     .status-pill y .alert-banner. No reemplazan a Primary: se usan solo
+     cuando el significado semántico de la acción lo justifica. */
+  .btn-success{background:color-mix(in srgb, var(--status-good) 14%, white);border-color:transparent;color:var(--status-good);}
+  .btn-success:hover{background:color-mix(in srgb, var(--status-good) 24%, white);}
+  .btn-warning{background:color-mix(in srgb, var(--status-warning) 16%, white);border-color:transparent;color:var(--status-warning);}
+  .btn-warning:hover{background:color-mix(in srgb, var(--status-warning) 26%, white);}
+  .btn-info{background:color-mix(in srgb, var(--status-info) 14%, white);border-color:transparent;color:var(--status-info);}
+  .btn-info:hover{background:color-mix(in srgb, var(--status-info) 24%, white);}
+
+  /* Loading — pensado para usarse junto con el ícono #i-spinner */
+  .btn-loading{cursor:wait;pointer-events:none;opacity:.85;}
+  .btn-loading .icon{animation:btn-spin .7s linear infinite;}
+  @keyframes btn-spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Menú desplegable de un botón (Exportar ▾, etc.) ----------
+     Mismo lenguaje visual que el resto del sistema: el panel reutiliza
+     el fondo/borde/radio/sombra de .card y cada opción tiene un hover
+     suave igual a .btn-ghost. Abrir/cerrar: ver initBtnDropdowns en
+     dashboard.js (data-dropdown-toggle / data-dropdown-menu). */
+  .btn-dropdown{position:relative;display:inline-flex;}
+  .btn-dropdown-menu{
+    position:absolute;top:calc(100% + 6px);right:0;min-width:180px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+    box-shadow:var(--shadow);padding:6px;z-index:30;
+    display:flex;flex-direction:column;gap:2px;
+  }
+  .btn-dropdown-menu[hidden]{display:none;}
+  .btn-dropdown-item{
+    display:flex;align-items:center;gap:8px;width:100%;
+    background:none;border:none;border-radius:var(--radius-sm);
+    padding:8px 10px;font-family:var(--font-body);font-size:13px;color:var(--text);
+    text-align:left;cursor:pointer;
+  }
+  .btn-dropdown-item:hover{background:var(--surface-2);}
+  .btn-dropdown-item .icon{width:15px;height:15px;color:var(--text-muted);flex-shrink:0;}
 
   .ficha-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
   .ficha-summary-tile{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;}
@@ -347,10 +459,6 @@
   .info-label{font-size:11.5px;color:var(--text-muted);}
   .info-value{font-size:13.5px;color:var(--text);word-break:break-word;}
   .info-field.disabled .info-value{color:var(--text-muted);}
-
-  .btn-secondary{display:inline-flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-btn);color:var(--text);font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 14px;cursor:pointer;}
-  .btn-secondary:hover{background:var(--surface);border-color:var(--border-strong);}
-  .btn-secondary .icon{width:16px;height:16px;color:var(--sidebar-bg);}
 
   .ficha-table-wrap{overflow-x:auto;}
   .ficha-table{width:100%;border-collapse:collapse;font-size:13px;}
@@ -617,7 +725,6 @@
   .auth-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
   .auth-check{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-secondary);cursor:pointer;}
   .auth-link{font-size:12.5px;font-weight:600;color:var(--sidebar-bg);}
-  .auth-submit{width:100%;justify-content:center;padding:11px 16px;font-size:14px;}
 
   /* ---------- Cartel de alerta reutilizable (errores de formulario y avisos) ----------
      Distinto de .info-alert (que es un aviso fijo, siempre celeste, solo
@@ -662,8 +769,8 @@
      input tipo .auth-input-wrap, tabla .ficha-table, .status-pill,
      .table-link) — acá el <select> es funcional: filtra de verdad vía GET,
      sin JS ni lógica de más. */
-  .list-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px;}
-  .list-search{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;background:var(--surface-2);flex:1;min-width:220px;}
+  .list-toolbar{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-bottom:16px;}
+  .list-search{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;background:var(--surface-2);width:100%;}
   .list-search .icon{color:var(--text-muted);flex-shrink:0;}
   .list-search input{border:none;background:none;outline:none;font-family:var(--font-body);font-size:13.5px;color:var(--text);width:100%;}
   .list-select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--surface-2);font-family:var(--font-body);font-size:13px;color:var(--text-secondary);cursor:pointer;}
@@ -703,4 +810,77 @@
     .list-filters-panel:not(.open){display:none;}
     .list-filters-panel.open{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:10px;}
     .list-filters-panel .list-select{width:100%;}
+  }
+
+  /* ---------- Filtros avanzados ("+ Agregar filtro") ----------
+     Cada filtro agregado es un "field" propio — label arriba (con la ×
+     para sacarlo del todo alineada a la derecha) y el control debajo —
+     ya no un chip con etiqueta + valor + quitar amontonados en la misma
+     caja. Los fields se acomodan con flex-wrap, cada uno con el ancho
+     que le resulta natural según su tipo: un <select> sin width fijo ya
+     se ensancha solo según su opción más larga (por eso "Condición de
+     IVA" sale más ancho que "Localidad" sin tener que pedírselo a mano).
+     Arrancan sin mostrarse — el botón "+ Agregar filtro" (un
+     .btn-dropdown del Button System, ver más arriba) lista los filtros
+     que todavía faltan agregar, y elegir uno hace aparecer su field
+     (dashboard.js, initDynamicFilterBuilder) sacándolo de esa lista, para
+     que no se pueda agregar el mismo filtro dos veces; sacarlo con la ×
+     lo devuelve al menú. Los que ya vienen activos por la querystring se
+     renderizan server-side (ver asociados_list.html) con esta misma
+     estructura, así que al recargar la página se reconstruyen sin
+     depender de que el JS haya corrido.
+
+     Agregar, quitar o completar un filtro NO dispara ningún envío por sí
+     solo (ver dashboard.js: ya no hay ningún auto-submit en los
+     controles) — la búsqueda se ejecuta recién al presionar "Filtrar",
+     para poder armar varios criterios antes de consultar. Mientras tanto
+     "visible" (si el filtro se dibuja) y "active" (si tiene un valor
+     real, ver views.asociados_list) son cosas distintas: un filtro
+     agregado y todavía vacío sigue "visible" después de un "Filtrar". */
+  .filter-fields-row{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-end;}
+  .filter-field{display:inline-flex;flex-direction:column;gap:4px;}
+  .filter-field-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .filter-field-label{font-size:12px;font-weight:600;color:var(--text-secondary);white-space:nowrap;}
+  .filter-field-remove{
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    background:none;border:none;padding:2px;margin:0;color:var(--text-muted);cursor:pointer;
+  }
+  .filter-field-remove:hover{color:var(--status-critical);}
+  .filter-field-remove .icon{width:13px;height:13px;}
+
+  .filter-field-control{
+    border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);
+    font-family:var(--font-body);font-size:13px;color:var(--text);
+    height:32px;padding:0 10px;
+  }
+  .filter-field-control:focus{outline:none;border-color:var(--sidebar-bg);background:var(--surface);}
+
+  .filter-field-select-wrap{position:relative;display:inline-flex;}
+  select.filter-field-control{
+    appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:pointer;
+    padding-right:28px;min-width:110px;color:var(--text-secondary);
+  }
+  .filter-field-chevron{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    width:14px;height:14px;color:var(--text-muted);pointer-events:none;
+  }
+
+  input.filter-field-control{cursor:text;}
+  .filter-field-input{width:220px;}
+
+  .filter-field-daterange{display:flex;align-items:center;gap:6px;}
+  .filter-field-daterange .filter-field-control{width:128px;padding:0 8px;cursor:pointer;}
+  .filter-field-daterange-sep{color:var(--text-muted);font-size:12px;flex-shrink:0;}
+
+  .filter-fields-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .btn-dropdown-item[hidden]{display:none;}
+
+  @media (max-width: 860px){
+    .filter-fields-row{flex-direction:column;align-items:stretch;gap:12px;}
+    .filter-field{width:100%;}
+    .filter-field-control{width:100%;}
+    .filter-field-select-wrap{width:100%;}
+    .filter-field-input{width:100%;}
+    .filter-field-daterange{width:100%;}
+    .filter-field-daterange .filter-field-control{flex:1;width:auto;}
   }

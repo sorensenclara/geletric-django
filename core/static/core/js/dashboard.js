@@ -449,6 +449,171 @@
     });
   }
 
+  // ---------- filtros avanzados ("+ Agregar filtro") ----------
+  // El menú del botón "+ Agregar filtro" (#add-filter-menu, un
+  // .btn-dropdown del Button System — ver initBtnDropdowns más abajo, que
+  // ya resuelve abrir/cerrar) lista los filtros que todavía NO están
+  // agregados a la interfaz: cada opción ya viene server-rendered con
+  // [hidden] puesto si ese filtro ya es "visible" (ver
+  // views.asociados_list — "visible" no es lo mismo que tener un valor
+  // cargado). Elegir una agrega su "field" (label + × + control, ver
+  // dashboard.css) dentro de #filter-fields-row y oculta esa opción del
+  // menú, para que no se pueda agregar el mismo filtro dos veces; sacarlo
+  // con la × la vuelve a mostrar. Ni agregarlo ni quitarlo ni cambiar su
+  // valor dispara ningún envío — eso pasa solo al presionar "Filtrar".
+  // Los datos de cada filtro
+  // (tipo de control, opciones) salen del <script type="application/json">
+  // que arma Django con {{ filtros_disponibles|json_script:"…" }} — nada
+  // de esto sabe que es la tabla de Asociados en particular, así que sirve
+  // para cualquier otro listado que arme su propio #add-filter-menu /
+  // #filter-fields-row con los mismos ids y el mismo formato de datos.
+  function initDynamicFilterBuilder() {
+    var addMenu = document.getElementById("add-filter-menu");
+    var addToggle = document.querySelector('[data-dropdown-toggle="add-filter-menu"]');
+    var fieldsRow = document.getElementById("filter-fields-row");
+    var camposVisiblesInput = document.getElementById("campos-visibles-input");
+    var filtros = readJSON("filtros-disponibles-data");
+    if (!addMenu || !fieldsRow || !filtros) return;
+
+    var porKey = {};
+    filtros.forEach(function (f) { porKey[f.key] = f; });
+
+    function activeKeys() {
+      var keys = [];
+      fieldsRow.querySelectorAll("[data-filter-key]").forEach(function (field) {
+        keys.push(field.getAttribute("data-filter-key"));
+      });
+      return keys;
+    }
+
+    function syncMenuItems() {
+      var active = activeKeys();
+      addMenu.querySelectorAll("[data-add-filter]").forEach(function (item) {
+        item.hidden = active.indexOf(item.getAttribute("data-add-filter")) !== -1;
+      });
+    }
+
+    // Mantiene "campos_visibles" al día con qué filtros están agregados a
+    // la interfaz ahora mismo (tengan o no valor): viaja en el próximo
+    // submit (botón Filtrar, Enter en el buscador) para que la vista sepa
+    // qué reconstruir como visible sin depender de si terminó teniendo un
+    // valor — ver views.asociados_list. Agregar o quitar un filtro NO
+    // envía el formulario: solo actualiza este input oculto.
+    function syncCamposVisibles() {
+      if (camposVisiblesInput) camposVisiblesInput.value = activeKeys().join(",");
+    }
+
+    function controlMarkup(f) {
+      if (f.type === "text") {
+        return '<input type="text" name="' + f.key + '" class="filter-field-control filter-field-input" placeholder="' + escapeHtml(f.label) + '">';
+      }
+      if (f.type === "daterange") {
+        var p = f.params;
+        return '<span class="filter-field-daterange">' +
+          '<input type="date" name="' + p[0] + '" class="filter-field-control" aria-label="' + escapeHtml(f.label) + ' desde">' +
+          '<span class="filter-field-daterange-sep">–</span>' +
+          '<input type="date" name="' + p[1] + '" class="filter-field-control" aria-label="' + escapeHtml(f.label) + ' hasta">' +
+          "</span>";
+      }
+      // "select" / "boolean": mismo <select>, solo cambian las opciones.
+      var opciones = '<option value="">Todos</option>';
+      (f.options || []).forEach(function (o) {
+        opciones += '<option value="' + escapeHtml(o.value) + '">' + escapeHtml(o.label) + "</option>";
+      });
+      return '<span class="filter-field-select-wrap">' +
+        '<select name="' + f.key + '" class="filter-field-control filter-field-select">' + opciones + "</select>" +
+        '<svg class="icon filter-field-chevron"><use href="#i-chevdown"/></svg>' +
+        "</span>";
+    }
+
+    function bindRemove(field) {
+      var btn = field.querySelector("[data-remove-filter]");
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        field.remove();
+        syncMenuItems();
+        syncCamposVisibles();
+      });
+    }
+
+    function addField(key) {
+      var f = porKey[key];
+      if (!f) return;
+      var field = document.createElement("div");
+      field.className = "filter-field";
+      field.setAttribute("data-filter-key", f.key);
+      field.innerHTML =
+        '<div class="filter-field-head">' +
+        '<span class="filter-field-label">' + escapeHtml(f.label) + "</span>" +
+        '<button type="button" class="filter-field-remove" data-remove-filter aria-label="Quitar filtro ' + escapeHtml(f.label) + '">' +
+        '<svg class="icon"><use href="#i-x"/></svg></button>' +
+        "</div>" +
+        controlMarkup(f);
+      fieldsRow.appendChild(field);
+      bindRemove(field);
+      syncMenuItems();
+      syncCamposVisibles();
+      var firstControl = field.querySelector(".filter-field-control");
+      if (firstControl) firstControl.focus();
+    }
+
+    // fields ya reconstruidos server-side desde la querystring: solo hace
+    // falta engancharles el botón de quitar y descontarlos del menú
+    // (syncMenuItems ya los exceptúa). Ninguno se auto-envía: agregar,
+    // quitar o cambiar un valor solo actualiza el estado del formulario —
+    // el envío real pasa únicamente por el botón "Filtrar".
+    fieldsRow.querySelectorAll(".filter-field").forEach(bindRemove);
+    syncMenuItems();
+
+    addMenu.querySelectorAll("[data-add-filter]").forEach(function (item) {
+      item.addEventListener("click", function () {
+        var key = item.getAttribute("data-add-filter");
+        addMenu.hidden = true;
+        if (addToggle) addToggle.setAttribute("aria-expanded", "false");
+        addField(key);
+      });
+    });
+  }
+
+  // ---------- botones con menú desplegable (Exportar ▾, etc.) ----------
+  // Componente del Button System (.btn-dropdown / .btn-dropdown-menu, ver
+  // dashboard.css): el botón que abre el menú lleva
+  // data-dropdown-toggle="id-del-menu" y aria-expanded="false"; el menú es
+  // <div class="btn-dropdown-menu" id="id-del-menu" hidden>. No sabe nada
+  // de qué opciones tiene adentro, así que sirve para cualquier botón con
+  // menú del sistema, no solo "Exportar".
+  function initBtnDropdowns() {
+    var toggles = document.querySelectorAll("[data-dropdown-toggle]");
+    if (!toggles.length) return;
+
+    function closeAll(except) {
+      toggles.forEach(function (btn) {
+        if (btn === except) return;
+        var menu = document.getElementById(btn.getAttribute("data-dropdown-toggle"));
+        if (!menu) return;
+        menu.hidden = true;
+        btn.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    toggles.forEach(function (btn) {
+      var menu = document.getElementById(btn.getAttribute("data-dropdown-toggle"));
+      if (!menu) return;
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var open = menu.hidden;
+        closeAll(btn);
+        menu.hidden = !open;
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    });
+
+    document.addEventListener("click", function () { closeAll(); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeAll();
+    });
+  }
+
   window.Dashboard = {
     initLineChart: initLineChart,
     initDonutChart: initDonutChart,
@@ -463,5 +628,7 @@
     initBrandPicker();
     initFiltersToggle();
     initAccordionRows();
+    initDynamicFilterBuilder();
+    initBtnDropdowns();
   });
 })(window);
