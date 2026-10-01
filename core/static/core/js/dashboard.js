@@ -412,6 +412,43 @@
     apply(document.documentElement.getAttribute("data-brand") === "green" ? "green" : "blue");
   }
 
+  // ---------- filtros colapsables (mobile, componente reutilizable) ----------
+  // Cualquier botón [data-filters-toggle] controla el panel que señala su
+  // aria-controls: alterna aria-expanded en el botón y la clase .open en el
+  // panel (dashboard.css hace el resto: display:contents en desktop,
+  // oculto/visible en mobile). Genérico — no sabe nada de Asociados ni de
+  // qué filtros tiene adentro, así que sirve igual para cualquier otro
+  // listado que use este mismo patrón.
+  function initFiltersToggle() {
+    document.querySelectorAll("[data-filters-toggle]").forEach(function (btn) {
+      var panel = document.getElementById(btn.getAttribute("aria-controls"));
+      if (!panel) return;
+      btn.addEventListener("click", function () {
+        var open = btn.getAttribute("aria-expanded") !== "true";
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        panel.classList.toggle("open", open);
+      });
+    });
+  }
+
+  // ---------- filas accordion (mobile, componente reutilizable) ----------
+  // Cada tabla .table-accordion arma su primera celda con {% rowsummary %}
+  // (ver core_extras.py), que ya incluye el botón .row-summary-btn — acá
+  // solo hace falta escuchar el click y alternar .open en la <tr> que lo
+  // contiene, más aria-expanded en el propio botón para el chevron y la
+  // accesibilidad. Cada fila es independiente de las demás.
+  function initAccordionRows() {
+    document.querySelectorAll(".table-accordion .row-summary-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var row = btn.closest("tr");
+        if (!row) return;
+        var open = !row.classList.contains("open");
+        row.classList.toggle("open", open);
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    });
+  }
+
   window.Dashboard = {
     initLineChart: initLineChart,
     initDonutChart: initDonutChart,
@@ -424,5 +461,7 @@
     initSidebarSearch();
     initTopbarSearch();
     initBrandPicker();
+    initFiltersToggle();
+    initAccordionRows();
   });
 })(window);

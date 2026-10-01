@@ -398,6 +398,55 @@
     }
   }
 
+  /* ---------- Modo accordion para filas mobile (extensión del componente
+     responsive de arriba) ----------
+     Son los mismos <td> de siempre (generados con {% cell %}), pero en vez
+     de quedar todos visibles en bloque, se ocultan por default y sólo se
+     muestran cuando se abre la fila — así en una pantalla chica entran
+     muchos registros de un vistazo, y se puede entrar al detalle de a uno.
+     Se activa sumando la clase .table-accordion (además de
+     .table-responsive) a la tabla, y agregando un {% rowsummary %}…
+     {% endrowsummary %} como PRIMERA celda de cada <tr> (ver
+     core/templatetags/core_extras.py) con lo que se quiere ver siempre,
+     aunque la fila esté cerrada — en Asociados es nombre + N° + estado,
+     pero queda a criterio de cada tabla (por ejemplo, en Órdenes de
+     Trabajo podría ser N° de OT + cliente + estado). Las columnas que ya
+     están repetidas en ese resumen se marcan con
+     {% cell "Label" "accordion-hide" %} para que no se dupliquen en el
+     detalle. Abrir/cerrar cada fila es dashboard.js (initAccordionRows)
+     — con CSS solo no alcanza porque cada fila necesita su propio estado
+     independiente.
+     En desktop esta celda nueva no debe verse (ahí la tabla sigue mostrando
+     sus columnas de siempre, intactas) — por eso .row-summary arranca en
+     display:none fuera de la media query, y solo la media query de abajo
+     la vuelve a mostrar en mobile. */
+  .table-accordion td.row-summary{display:none;}
+
+  @media (max-width: 860px){
+    .table-accordion tbody tr{padding:0;}
+    .table-accordion td.row-summary{
+      display:block;border-top:none!important;padding:0;
+    }
+    .table-accordion .row-summary-btn{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      width:100%;background:none;border:none;padding:11px 14px;margin:0;
+      font-family:var(--font-body);text-align:left;cursor:pointer;color:inherit;
+    }
+    .table-accordion .row-summary-content{display:flex;flex-direction:column;gap:3px;min-width:0;}
+    .table-accordion .row-summary-title{font-size:13.5px;font-weight:600;color:var(--text);}
+    .table-accordion .row-summary-meta{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);}
+    .table-accordion .row-summary-dot{opacity:.6;}
+    .table-accordion .row-chevron{color:var(--text-muted);flex-shrink:0;transition:transform .15s ease;}
+    .table-accordion tr.open .row-chevron{transform:rotate(180deg);}
+
+    .table-accordion td:not(.row-summary){
+      display:none;padding-left:14px;padding-right:14px;
+    }
+    .table-accordion tr.open td:not(.row-summary){display:block;}
+    .table-accordion tr.open td.accordion-hide{display:none!important;}
+    .table-accordion tr.open td:last-child{padding-bottom:11px;}
+  }
+
   .status-pill{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--surface-2);color:var(--text-secondary);}
   .status-pill.good{background:color-mix(in srgb, var(--status-good) 14%, white);color:var(--status-good);}
   .status-pill.warning{background:color-mix(in srgb, var(--status-warning) 16%, white);color:var(--status-warning);}
@@ -620,7 +669,38 @@
   .list-select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--surface-2);font-family:var(--font-body);font-size:13px;color:var(--text-secondary);cursor:pointer;}
   .list-count{font-size:12px;color:var(--text-muted);margin:0 0 10px;}
 
-  @media (max-width: 700px){
+  /* ---------- Filtros colapsables (componente reutilizable) ----------
+     Lo que va DENTRO del bloque colapsable se envuelve en un
+     <div class="list-filters-panel" data-filters-panel>: en desktop
+     display:contents hace que sus hijos (acá, los <select> y los botones
+     Filtrar/Limpiar) se comporten como si ese div no existiera — el
+     .list-toolbar de siempre, sin ningún cambio. En mobile se oculta por
+     default y se muestra/oculta con un botón
+     <button data-filters-toggle aria-controls="…">, ver
+     initFiltersToggle en dashboard.js. Lo único que cada tabla decide que
+     quede SIEMPRE visible afuera de ese div (acá, el buscador) se deja
+     fuera del wrapper. Mismo mecanismo reutilizable para cualquier otro
+     listado del sistema. */
+  .list-filters-panel{display:contents;}
+  .filters-toggle{display:none;}
+
+  @media (max-width: 860px){
     .list-toolbar{flex-direction:column;align-items:stretch;}
-    .list-select{width:100%;}
+
+    .filters-toggle{
+      display:flex;align-items:center;gap:8px;width:100%;
+      background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-btn);
+      color:var(--text);font-family:var(--font-body);font-size:13px;font-weight:600;
+      padding:9px 14px;cursor:pointer;
+    }
+    .filters-toggle .icon{color:var(--sidebar-bg);flex-shrink:0;}
+    .filters-toggle span{flex:1;text-align:left;}
+    .filters-toggle-chev{transition:transform .15s ease;flex-shrink:0;}
+    .filters-toggle[aria-expanded="true"] .filters-toggle-chev{transform:rotate(180deg);}
+    .filters-toggle.active{border-color:var(--sidebar-bg);}
+    .filters-toggle.active::after{content:"";width:7px;height:7px;border-radius:999px;background:var(--brand-green);flex-shrink:0;}
+
+    .list-filters-panel:not(.open){display:none;}
+    .list-filters-panel.open{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:10px;}
+    .list-filters-panel .list-select{width:100%;}
   }

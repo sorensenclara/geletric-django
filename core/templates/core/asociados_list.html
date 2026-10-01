@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load static %}
+{% load static core_extras %}
 
 {% block title %}GELETRIC · Listado de asociados{% endblock %}
 
@@ -21,34 +21,41 @@
         <svg class="icon"><use href="#i-search"/></svg>
         <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o N° de asociado…">
       </label>
-      <select name="estado" class="list-select">
-        <option value="">Estado (todos)</option>
-        <option value="Activo"{% if estado_filter == "Activo" %} selected{% endif %}>Activo</option>
-        <option value="Inactivo"{% if estado_filter == "Inactivo" %} selected{% endif %}>Inactivo</option>
-      </select>
-      <select name="rol" class="list-select">
-        <option value="">Rol (todos)</option>
-        <option value="Asociado"{% if rol_filter == "Asociado" %} selected{% endif %}>Asociado</option>
-        <option value="Usuario"{% if rol_filter == "Usuario" %} selected{% endif %}>Usuario</option>
-        <option value="Proveedor"{% if rol_filter == "Proveedor" %} selected{% endif %}>Proveedor</option>
-      </select>
-      <select name="localidad" class="list-select">
-        <option value="">Localidad (todas)</option>
-        {% for loc in localidades %}
-        <option value="{{ loc }}"{% if localidad_filter == loc %} selected{% endif %}>{{ loc }}</option>
-        {% endfor %}
-      </select>
-      <button class="btn-secondary" type="submit"><svg class="icon"><use href="#i-search"/></svg>Filtrar</button>
-      {% if q or estado_filter or rol_filter or localidad_filter %}
-      <a class="btn-secondary" href="{% url 'core:asociados_list' %}"><svg class="icon"><use href="#i-x"/></svg>Limpiar</a>
-      {% endif %}
+      <button type="button" class="filters-toggle{% if estado_filter or rol_filter or localidad_filter %} active{% endif %}" data-filters-toggle aria-expanded="false" aria-controls="list-filters-panel">
+        <svg class="icon"><use href="#i-filter"/></svg>
+        <span>Filtros</span>
+        <svg class="icon filters-toggle-chev"><use href="#i-chevdown"/></svg>
+      </button>
+      <div class="list-filters-panel" id="list-filters-panel">
+        <select name="estado" class="list-select">
+          <option value="">Estado (todos)</option>
+          <option value="Activo"{% if estado_filter == "Activo" %} selected{% endif %}>Activo</option>
+          <option value="Inactivo"{% if estado_filter == "Inactivo" %} selected{% endif %}>Inactivo</option>
+        </select>
+        <select name="rol" class="list-select">
+          <option value="">Rol (todos)</option>
+          <option value="Asociado"{% if rol_filter == "Asociado" %} selected{% endif %}>Asociado</option>
+          <option value="Usuario"{% if rol_filter == "Usuario" %} selected{% endif %}>Usuario</option>
+          <option value="Proveedor"{% if rol_filter == "Proveedor" %} selected{% endif %}>Proveedor</option>
+        </select>
+        <select name="localidad" class="list-select">
+          <option value="">Localidad (todas)</option>
+          {% for loc in localidades %}
+          <option value="{{ loc }}"{% if localidad_filter == loc %} selected{% endif %}>{{ loc }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn-secondary" type="submit"><svg class="icon"><use href="#i-search"/></svg>Filtrar</button>
+        {% if q or estado_filter or rol_filter or localidad_filter %}
+        <a class="btn-secondary" href="{% url 'core:asociados_list' %}"><svg class="icon"><use href="#i-x"/></svg>Limpiar</a>
+        {% endif %}
+      </div>
     </form>
 
     <p class="list-count">Mostrando {{ asociados|length }} de {{ total_asociados }} asociados.</p>
 
     {% if asociados %}
     <div class="ficha-table-wrap">
-      <table class="ficha-table asociados-table">
+      <table class="ficha-table table-responsive table-accordion asociados-table">
         <thead>
           <tr>
             <th>Nombre</th>
@@ -62,12 +69,16 @@
         <tbody>
           {% for a in asociados %}
           <tr>
-            <td>{{ a.nombre_completo }}</td>
-            <td>{{ a.numero_asociado }}</td>
-            <td><span class="status-pill{% if a.estado == "Activo" %} good{% else %} neutral{% endif %}">{{ a.estado }}</span></td>
-            <td>{{ a.localidad }}</td>
-            <td>{{ a.direccion }}</td>
-            <td><a class="table-link" href="{% url 'core:asociado_ficha' numero_asociado=a.numero_asociado %}">Ver ficha<svg class="icon"><use href="#i-chevright"/></svg></a></td>
+            {% rowsummary %}
+              <span class="row-summary-title">{{ a.nombre_completo }}</span>
+              <span class="row-summary-meta">N° {{ a.numero_asociado }}<span class="row-summary-dot">·</span><span class="status-pill{% if a.estado == "Activo" %} good{% else %} neutral{% endif %}">{{ a.estado }}</span></span>
+            {% endrowsummary %}
+            {% cell "Nombre" "accordion-hide" %}{{ a.nombre_completo }}{% endcell %}
+            {% cell "N° asociado" "accordion-hide" %}{{ a.numero_asociado }}{% endcell %}
+            {% cell "Estado" "accordion-hide" %}<span class="status-pill{% if a.estado == "Activo" %} good{% else %} neutral{% endif %}">{{ a.estado }}</span>{% endcell %}
+            {% cell "Localidad" %}{{ a.localidad }}{% endcell %}
+            {% cell "Dirección" %}{{ a.direccion }}{% endcell %}
+            {% cell "Acciones" %}<a class="table-link" href="{% url 'core:asociado_ficha' numero_asociado=a.numero_asociado %}">Ver ficha<svg class="icon"><use href="#i-chevright"/></svg></a>{% endcell %}
           </tr>
           {% endfor %}
         </tbody>
