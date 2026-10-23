@@ -1,6 +1,10 @@
+import re
+
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
+from django.db.models import Q
 from django.http import Http404, JsonResponse
+from django.utils.html import format_html
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -8,8 +12,9 @@ from django.utils import timezone
 from . import associate_data as ad
 from . import sample_data as sd
 from .forms import AsociadoAltaForm, GeletricLoginForm
-from .models import Asociado
-from .modules_data import get_module
+from .context_processors import card_href, item_href
+from .models import Asociado, Suministro
+from .nav_map import ACCIONES, LEGACY_SLUGS, get_card, get_item, get_module
 
 
 def _with_module_style(item):
@@ -18,6 +23,7 @@ def _with_module_style(item):
     module = get_module(item["module"])
     return {
         **item,
+        "mod": module,
         "icon_tile": module["icon_tile"],
         "color": module["color"],
         "module_name": module["name"],
@@ -52,25 +58,163 @@ def home(request):
     return render(request, "core/home.html", context)
 
 
+# ---------- Mapa de sitio v3: pantallas del sidebar ----------
+# Todo lo que se abre desde el sidebar pasa por acá (salvo Asociados, que
+# ya tiene su listado real): module_detail → /modulos/<modulo>/,
+# nav_item → /modulos/<modulo>/<item>/, nav_card →
+# /modulos/<modulo>/<item>/<tarjeta>/. Qué se dibuja lo decide
+# core/nav_map.py (grilla, tarjetas, proceso o tablero); las pantallas que
+# ya tienen datos reales se enchufan con `handler` (ver NAV_HANDLERS).
+
+CARD_ICONS = {"grid": "i-file", "cards": "i-more", "proc": "i-gear", "tab": "i-piechart"}
+KIND_LABELS = {"grid": "Grilla", "cards": "Tarjetas", "proc": "Proceso", "tab": "Tablero"}
+_PRIMARY_ACTION_RE = re.compile(r"^(Nuev|Crear)")
+
+
+def _crumbs(module, item=None, card=None):
+    from .context_processors import module_href
+    crumbs = [{"label": module["name"], "href": module_href(module)}]
+    if item:
+        crumbs.append({"label": item["label"], "href": item_href(module, item)})
+    if card:
+        crumbs.append({"label": card["label"], "href": None})
+    crumbs[-1]["href"] = None
+    return crumbs
+
+
+def _render_screen(request, module, view, item=None, card=None, cards=None, extra=None):
+    """Renderiza cualquier pantalla del mapa con core/nav_screen.html."""
+    context = {
+        "active_slug": module["slug"],
+        "active_item": item["slug"] if item else "",
+        "module": module,
+        "view": view,
+        "kind_label": KIND_LABELS[view["kind"]],
+        "crumbs": _crumbs(module, item, card),
+    }
+    if view["kind"] == "cards":
+        if cards is None:
+            cards = [{
+                "label": cd["label"], "desc": cd["desc"],
+                "href": card_href(module, item, cd),
+                "icon": CARD_ICONS[cd["view"]["kind"]],
+            } for cd in view["cards"]]
+        context["cards"] = cards
+    elif view["kind"] == "grid":
+        context["acciones"] = [
+            {"label": a, "primary": bool(_PRIMARY_ACTION_RE.match(a))}
+            for a in view["acciones"] if a not in ACCIONES
+        ]
+        context.setdefault("rows", None)
+    context.update(extra or {})
+    return render(request, "core/nav_screen.html", context)
+
+
+def _dispatch(request, module, view, item=None, card=None):
+    handler = NAV_HANDLERS.get(view.get("handler"))
+    if handler:
+        return handler(request, module, view, item, card)
+    return _render_screen(request, module, view, item, card)
+
+
 def module_detail(request, slug):
+    """Entrada de un módulo. Sin submenú: su pantalla (o la URL real que
+    tenga, como el listado de Asociados). Con submenú: una página de
+    tarjetas con sus ítems — la usan Inicio (accesos rápidos) y la miga de
+    pan; desde el sidebar se entra directo a cada ítem."""
+    if slug in LEGACY_SLUGS:
+        return redirect("core:module_detail", slug=LEGACY_SLUGS[slug])
     module = get_module(slug)
     if module is None:
         raise Http404("Módulo no encontrado")
 
-    # Asociados y servicios ya tiene pantalla propia: una grilla de tarjetas
-    # que linkean a cada funcionalidad interna (ver core:asociado_sub), en
-    # vez del placeholder de texto plano. El resto de los módulos sigue
-    # mostrando la lista genérica hasta que se confirme su propia Historia
-    # de Usuario.
-    if slug == "asociados":
-        return render(request, "core/asociados_menu.html", {
-            "active_slug": slug,
-            "module": module,
-            "cards": ad.get_asociados_cards(),
-        })
+    view = module.get("view")
+    if view:
+        if view.get("url_name"):
+            return redirect(view["url_name"])
+        return _dispatch(request, module, view)
 
-    items = [{"label": label, "href": None} for label in module["items"]]
-    return render(request, "core/module.html", {"active_slug": slug, "module": module, "items": items})
+    overview = {
+        "kind": "cards", "title": module["name"],
+        "desc": f"{len(module['sub'])} opciones en este módulo.",
+    }
+    cards = [{
+        "label": it["label"],
+        "desc": it["view"].get("desc") or KIND_LABELS[it["view"]["kind"]],
+        "href": item_href(module, it),
+        "icon": CARD_ICONS[it["view"]["kind"]],
+    } for it in module["sub"]]
+    return _render_screen(request, module, overview, cards=cards)
+
+
+def nav_item(request, slug, item_slug):
+    module = get_module(slug)
+    item = get_item(module, item_slug) if module else None
+    if item is None:
+        raise Http404("Página no encontrada")
+    return _dispatch(request, module, item["view"], item)
+
+
+def nav_card(request, slug, item_slug, card_slug):
+    module = get_module(slug)
+    item = get_item(module, item_slug) if module else None
+    card = get_card(item["view"], card_slug) if item else None
+    if card is None:
+        raise Http404("Página no encontrada")
+    return _dispatch(request, module, card["view"], item, card)
+
+
+def suministros_grid(request, module, view, item=None, card=None):
+    """Grilla de Suministros con datos reales (models.Suministro). El
+    modelo hoy solo tiene el vínculo Socio/Titular (HU-ASO-03): Servicio,
+    Tarifa, Inmueble y Estado se muestran vacíos hasta que la HU del
+    suministro los defina — la grilla ya tiene sus columnas del mapa v3.
+    El Socio se muestra debajo del Titular cuando no es la misma persona."""
+    q = request.GET.get("q", "").strip()
+    qs = Suministro.objects.select_related("socio", "titular").order_by("pk")
+    total = qs.count()
+    if q:
+        filtro = Q()
+        for rel in ("titular", "socio"):
+            filtro |= (Q(**{f"{rel}__nombre_apellido__icontains": q})
+                       | Q(**{f"{rel}__razon_social__icontains": q})
+                       | Q(**{f"{rel}__numero_asociado__icontains": q}))
+        if q.isdigit():
+            filtro |= Q(pk=int(q))
+        qs = qs.filter(filtro)
+
+    rows = []
+    for s in qs:
+        titular = format_html(
+            '<a class="table-link" href="{}">{}</a>',
+            reverse("core:asociado_ficha", kwargs={"numero_asociado": s.titular.numero_asociado}),
+            s.titular.nombre_o_razon_social,
+        )
+        if s.socio_id != s.titular_id:
+            titular = format_html('{}<span class="cell-sub">Socio: {}</span>', titular,
+                                  s.socio.nombre_o_razon_social)
+        valores = [f"{s.pk:05d}", "—", titular, "—", "—", "—"]
+        rows.append({"cells": list(zip(view["cols"], valores))})
+
+    return _render_screen(request, module, view, item, card, extra={
+        "rows": rows,
+        "total": total,
+        "q": q,
+        "searchable": True,
+        "empty_label": (
+            "No se encontraron suministros con esa búsqueda." if q and total
+            else "Todavía no hay suministros cargados. Por ahora se cargan desde /admin/."
+        ),
+        "data_note": (
+            "Servicio, Tarifa, Inmueble y Estado todavía no existen en el modelo de Suministro: "
+            "se completan cuando su Historia de Usuario los defina."
+        ),
+    })
+
+
+NAV_HANDLERS = {
+    "suministros": suministros_grid,
+}
 
 
 def asociados_list(request):

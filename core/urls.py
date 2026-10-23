@@ -16,4 +16,6 @@ urlpatterns = [
     path("modulos/asociados/alta/", views.asociado_alta, name="asociado_alta"),
     path("modulos/asociados/<slug:subslug>/", views.asociado_sub, name="asociado_sub"),
     path("modulos/<slug:slug>/", views.module_detail, name="module_detail"),
+    path("modulos/<slug:slug>/<slug:item_slug>/", views.nav_item, name="nav_item"),
+    path("modulos/<slug:slug>/<slug:item_slug>/<slug:card_slug>/", views.nav_card, name="nav_card"),
 ]

@@ -118,6 +118,28 @@
   .nav-item.active::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--brand-green);}
   .nav-item:focus-visible{outline:2px solid var(--brand-green);outline-offset:1px;}
 
+  /* ---------- Mapa de sitio v3: bloques y submenús ----------
+     .nav-group: un bloque (Padrón · Gestión · Administración · Sistema)
+     con su título tenue. .nav-toggle: módulo con submenú (abre/cierra en
+     acordeón, ver dashboard.js initSidebarSubmenus). .current marca el
+     módulo de la página actual sin la barra de .active, que queda para el
+     ítem de submenú elegido. */
+  .nav-group{display:flex;flex-direction:column;gap:2px;}
+  .nav-group-title{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--sidebar-text-muted);padding:14px 10px 5px;}
+  .nav-group:first-of-type .nav-group-title{padding-top:10px;}
+  .nav-caret{margin-left:auto;width:13px;height:13px;flex-shrink:0;transition:transform .15s ease;}
+  .nav-module.open > .nav-toggle .nav-caret{transform:rotate(90deg);}
+  .nav-toggle.current{color:var(--sidebar-text-active);font-weight:600;}
+  .nav-toggle.current .nav-icon-img, .nav-toggle.current > .icon:first-child{color:var(--brand-green);}
+  .nav-sub{list-style:none;margin:2px 0 6px;padding:0;display:flex;flex-direction:column;gap:1px;}
+  .nav-sub[hidden]{display:none;}
+  .nav-sub-item{display:block;position:relative;padding:7px 10px 7px 39px;border-radius:var(--radius-sm);font-size:13px;color:var(--sidebar-text-muted);line-height:1.3;}
+  .nav-sub-item:hover{background:rgba(255,255,255,.05);color:#fff;}
+  .nav-sub-item.active{background:var(--sidebar-bg-active);color:var(--sidebar-text-active);font-weight:600;}
+  .nav-sub-item.active::before{content:"";position:absolute;left:-14px;top:7px;bottom:7px;width:3px;border-radius:0 3px 3px 0;background:var(--brand-green);}
+  .nav-sub-item:focus-visible{outline:2px solid var(--brand-green);outline-offset:1px;}
+  @media (prefers-reduced-motion: reduce){ .nav-caret{transition:none;} }
+
   /* ---------- Buscador del sidebar ----------
      Filtra el menú (módulos + opciones de submenú) a medida que se tipea —
      ver initSidebarSearch en dashboard.js. Mientras hay una búsqueda
@@ -660,6 +682,22 @@
        se oculta colapsado igual que el resto del contenido con texto. */
     .sidebar-search-wrap{display:none;}
     .sidebar.pinned .sidebar-search-wrap{display:block;}
+
+    /* Colapsado: sin títulos de bloque (queda una línea divisoria), sin
+       flecha y sin submenú — elegir un módulo con submenú expande el
+       sidebar y abre su lista (dashboard.js). El módulo actual se marca
+       como .active para que se vea desde los íconos solos. */
+    .nav-group-title{font-size:0;padding:0;height:1px;margin:9px 18px;background:var(--sidebar-border);}
+    .nav-group:first-of-type .nav-group-title{display:none;}
+    .sidebar.pinned .nav-group-title{font-size:10.5px;padding:14px 10px 5px;height:auto;margin:0;background:none;}
+    .sidebar.pinned .nav-group:first-of-type .nav-group-title{display:block;padding-top:10px;}
+    .nav-caret{display:none;}
+    .sidebar.pinned .nav-caret{display:block;}
+    .nav-sub{display:none;}
+    .sidebar.pinned .nav-sub{display:flex;}
+    .sidebar.pinned .nav-sub[hidden]{display:none;}
+    .sidebar:not(.pinned) .nav-toggle.current{background:var(--sidebar-bg-active);}
+    .sidebar:not(.pinned) .nav-toggle.current::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--brand-green);}
   }
 
   @media (max-width: 1080px){
@@ -884,3 +922,29 @@
     .filter-field-daterange{width:100%;}
     .filter-field-daterange .filter-field-control{flex:1;width:auto;}
   }
+
+/* ---------- Mapa de sitio v3: pantallas genéricas (nav_screen.html) ---------- */
+.mod-sprite-tile{display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:22%;background:var(--surface-2);box-shadow:inset 0 -2px 0 var(--border);color:var(--tile-color, var(--sidebar-bg));}
+.mod-sprite-tile .icon{width:55%;height:55%;}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;color:var(--text-muted);}
+.crumbs a{color:var(--sidebar-bg);font-weight:600;}
+.crumbs a:hover{text-decoration:underline;}
+.crumbs-sep{width:12px;height:12px;color:var(--text-muted);}
+.crumbs span[aria-current]{color:var(--text-secondary);}
+.nav-screen .module-head{flex-wrap:wrap;}
+.nav-screen-actions{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px;}
+.nav-grid th{white-space:nowrap;}
+.nav-grid td:last-child, .nav-grid th:last-child{text-align:left;}
+.nav-grid-empty td{text-align:left !important;color:var(--text-muted);font-size:12.5px;padding:18px 0;}
+.cell-sub{display:block;font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+.nav-screen-note{margin-top:12px;}
+.nav-screen-note .icon{color:var(--sidebar-bg);}
+.nav-screen-hint{margin:12px 0 0;font-size:12px;color:var(--text-muted);}
+.nav-screen-hint b{color:var(--text-secondary);font-weight:600;}
+.nav-screen-wizard{margin-bottom:14px;}
+@media (max-width: 860px){
+  .nav-screen-actions{margin-left:0;width:100%;}
+  .nav-grid-empty td{display:block;}
+  .nav-grid-empty td::before{content:none !important;}
+}
+.table-link{white-space:nowrap;}

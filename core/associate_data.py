@@ -76,8 +76,18 @@ def _asociado_a_dict_listado(asociado):
         "estado": asociado.get_estado_societario_display(),
         "localidad": asociado.localidad or "—",
         "direccion": asociado.domicilio,
+        "documento": _documento_listado(asociado),
+        "email": asociado.email or "—",
         "roles": _roles_de(asociado),
     }
+
+
+def _documento_listado(asociado):
+    """DNI (existencia real) o CUIT (existencia ideal, donde
+    numero_documento ES el CUIT — ver models.Asociado), formateado."""
+    if asociado.tipo_persona == Asociado.TIPO_PERSONA_IDEAL:
+        return _formato_cuit(asociado.numero_documento)
+    return _formato_dni(asociado.numero_documento)
 
 
 def get_asociados_list():

@@ -35,18 +35,18 @@ def get_stats():
     el ícono y el color de cada tarjeta salen siempre de su módulo asociado."""
     return [
         {"label": "Asociados activos", "value": "1.842", "trend": "+2,4%", "module": "asociados"},
-        {"label": "Órdenes de compra", "value": "24", "trend": "+14%", "module": "abastecimiento"},
+        {"label": "Órdenes de compra", "value": "24", "trend": "+14%", "module": "compras"},
         {"label": "Facturas emitidas", "value": "1.320", "trend": "+6%", "module": "comercial"},
-        {"label": "Consumo total (MWh)", "value": "12.468", "trend": "+3,1%", "module": "consumo"},
+        {"label": "Consumo total (MWh)", "value": "12.468", "trend": "+3,1%", "module": "consumos"},
     ]
 
 
 def get_tasks():
     return [
-        {"title": "Revisar órdenes de compra", "module": "abastecimiento", "due": "Hoy", "urgent": True},
+        {"title": "Revisar órdenes de compra", "module": "compras", "due": "Hoy", "urgent": True},
         {"title": "Aprobar facturas de proveedor", "module": "contabilidad", "due": "Hoy", "urgent": True},
         {"title": "Atender reclamos de asociados", "module": "asociados", "due": "Mañana", "urgent": False},
-        {"title": "Revisión de mantenimiento", "module": "tecnico", "due": "Próxima semana", "urgent": False},
+        {"title": "Revisión de mantenimiento", "module": "ordenes-trabajo", "due": "Próxima semana", "urgent": False},
         {"title": "Cierre contable mensual", "module": "contabilidad", "due": "Próxima semana", "urgent": False},
     ]
 
@@ -57,15 +57,15 @@ def get_news():
     raw = [
         {"title": "Nuevo padrón de asociados disponible", "module": "asociados", "days": 2},
         {"title": "Actualización de tipos de cambio", "module": "reportes", "days": 3},
-        {"title": "Mantenimiento programado del sistema", "module": "tecnico", "days": 6},
-        {"title": "Nuevas alícuotas de impuestos", "module": "impuestos", "days": 9},
+        {"title": "Mantenimiento programado del sistema", "module": "configuracion", "days": 6},
+        {"title": "Nuevas alícuotas de impuestos", "module": "configuracion", "days": 9},
     ]
     for item in raw:
         item["when"] = relative_days_label(item["days"])
     return raw
 
 
-QUICK_ACCESS_SLUGS = ["asociados", "abastecimiento", "contabilidad", "impuestos", "consumo", "tecnico"]
+QUICK_ACCESS_SLUGS = ["asociados", "suministros-inmuebles", "comercial", "contabilidad", "consumos", "configuracion"]
 
 
 def get_network_status():

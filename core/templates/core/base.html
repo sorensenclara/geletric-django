@@ -37,10 +37,35 @@
       <a class="nav-item{% if active_slug == 'home' %} active{% endif %}" href="{% url 'core:home' %}">
         <svg class="icon"><use href="#i-home"/></svg><span>Inicio</span>
       </a>
-      {% for m in modules %}
-      <a class="nav-item{% if active_slug == m.slug %} active{% endif %}" href="{% url 'core:module_detail' slug=m.slug %}">
-        {% inline_icon m.icon_white "nav-icon-img" %}<span>{{ m.name }}</span>
-      </a>
+      {% comment %}
+        Mapa de sitio v3 (core/nav_map.py): bloques → módulos → submenú.
+        Los módulos con submenú son un <button> que abre/cierra su lista
+        en acordeón (dashboard.js, initSidebarSubmenus); el del módulo
+        activo arranca abierto desde el servidor. Asociados y Órdenes de
+        trabajo no tienen submenú: son un <a> directo a su grilla.
+      {% endcomment %}
+      {% for g in nav_groups %}
+      <div class="nav-group">
+        <div class="nav-group-title">{{ g.name }}</div>
+        {% for m in g.modules %}
+        {% if m.items %}
+        <div class="nav-module{% if active_slug == m.slug %} open{% endif %}" data-nav-module>
+          <button class="nav-item nav-toggle{% if active_slug == m.slug %} current{% endif %}" type="button" aria-expanded="{% if active_slug == m.slug %}true{% else %}false{% endif %}" aria-controls="nav-sub-{{ m.slug }}">
+            {% module_icon m "white" "nav-icon-img" %}<span>{{ m.name }}</span><svg class="icon nav-caret" aria-hidden="true"><use href="#i-chevright"/></svg>
+          </button>
+          <ul class="nav-sub" id="nav-sub-{{ m.slug }}"{% if active_slug != m.slug %} hidden{% endif %}>
+            {% for it in m.items %}
+            <li><a class="nav-sub-item{% if active_slug == m.slug and active_item == it.slug %} active{% endif %}" href="{{ it.href }}"{% if active_slug == m.slug and active_item == it.slug %} aria-current="page"{% endif %}>{{ it.label }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% else %}
+        <a class="nav-item{% if active_slug == m.slug %} active{% endif %}" href="{{ m.href }}"{% if active_slug == m.slug %} aria-current="page"{% endif %}>
+          {% module_icon m "white" "nav-icon-img" %}<span>{{ m.name }}</span>
+        </a>
+        {% endif %}
+        {% endfor %}
+      </div>
       {% endfor %}
     </nav>
 

@@ -1,0 +1,112 @@
+{% extends "core/base.html" %}
+{% load core_extras %}
+{% comment %}
+  Pantalla genérica del mapa de sitio v3 (ver core/nav_map.py y
+  views._render_screen). Un solo template para los cuatro tipos:
+    cards — página de accesos, sin datos propios.
+    grid  — grilla con las columnas del mapa. `rows` None = todavía sin
+            modelo (se muestran las columnas y un estado vacío); lista =
+            datos reales (p. ej. Suministros, views.suministros_grid).
+    proc  — proceso: parámetros → ejecución → resultado.
+    tab   — tablero / reporte: filtros, visualización y exportación.
+{% endcomment %}
+
+{% block title %}GELETRIC · {{ view.title }}{% endblock %}
+
+{% block content %}
+<div class="module-view nav-screen">
+  {% if crumbs|length > 1 %}
+  <nav class="crumbs" aria-label="Ubicación">
+    {% for c in crumbs %}
+    {% if c.href %}<a href="{{ c.href }}">{{ c.label }}</a><svg class="icon crumbs-sep" aria-hidden="true"><use href="#i-chevright"/></svg>{% else %}<span aria-current="page">{{ c.label }}</span>{% endif %}
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  <div class="module-head">
+    {% module_icon module "tile" "module-head-icon-img" %}
+    <div>
+      <h2>{{ view.title }}</h2>
+      <p>{% if view.desc %}{{ view.desc }}{% else %}{{ module.name }}{% endif %}</p>
+    </div>
+    {% if view.kind == "grid" and acciones %}
+    <div class="nav-screen-actions">
+      {% for a in acciones %}
+      <button class="btn btn-sm {% if a.primary %}btn-primary{% else %}btn-secondary{% endif %}" type="button" disabled title="Disponible cuando se implemente esta pantalla">{% if a.primary %}<svg class="icon"><use href="#i-plus"/></svg>{% endif %}{{ a.label }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if view.kind == "cards" %}
+  <div class="asoc-menu-grid">
+    {% for c in cards %}
+    <a class="asoc-menu-card" href="{{ c.href }}">
+      <span class="asoc-menu-icon"><svg class="icon"><use href="#{{ c.icon }}"/></svg></span>
+      <span class="asoc-menu-text"><b>{{ c.label }}</b><span>{{ c.desc }}</span></span>
+      <svg class="icon asoc-menu-chevron"><use href="#i-chevright"/></svg>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% elif view.kind == "grid" %}
+  <div class="card card-pad">
+    <form method="get" class="list-toolbar">
+      <label class="list-search">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="text" name="q" value="{{ q|default:'' }}" placeholder="Buscar en {{ view.title|lower }}…"{% if not searchable %} disabled{% endif %}>
+      </label>
+      <div class="filter-fields-actions">
+        <button class="btn btn-secondary btn-sm" type="button" disabled title="Disponible cuando se implemente esta pantalla"><svg class="icon"><use href="#i-filter"/></svg>Filtros</button>
+        <button class="btn btn-secondary btn-sm" type="button" disabled title="Disponible cuando se implemente esta pantalla"><svg class="icon"><use href="#i-file-out"/></svg>Exportar</button>
+        {% if searchable %}
+        <button class="btn btn-primary btn-sm" type="submit"><svg class="icon"><use href="#i-search"/></svg>Buscar</button>
+        {% if q %}<a class="btn btn-tertiary btn-sm" href="{{ request.path }}"><svg class="icon"><use href="#i-x"/></svg>Limpiar</a>{% endif %}
+        {% endif %}
+      </div>
+    </form>
+
+    {% if view.qf %}<p class="list-count"><b>Filtros rápidos:</b> {{ view.qf }}</p>{% endif %}
+    {% if rows %}<p class="list-count">Mostrando {{ rows|length }} de {{ total }}.</p>{% endif %}
+
+    <div class="ficha-table-wrap">
+      <table class="ficha-table table-responsive nav-grid">
+        <thead><tr>{% for col in view.cols %}<th>{{ col }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>{% for label, value in row.cells %}<td data-th="{{ label }}">{{ value }}</td>{% endfor %}</tr>
+          {% empty %}
+          <tr class="nav-grid-empty"><td colspan="{{ view.cols|length }}">
+            {% if rows is None %}Todavía no hay datos: esta grilla se conecta cuando exista su modelo (Historia de Usuario pendiente).{% else %}{{ empty_label }}{% endif %}
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if data_note %}
+    <div class="status-banner nav-screen-note">
+      <svg class="icon"><use href="#i-help"/></svg>
+      <p>{{ data_note }}</p>
+    </div>
+    {% endif %}
+    <p class="nav-screen-hint">{% if view.ficha %}<b>Al elegir una fila se abre:</b> {{ view.ficha }}.{% else %}Solo consulta: las filas no abren ficha.{% endif %}</p>
+  </div>
+
+  {% else %}
+  <div class="card card-pad">
+    {% if view.kind == "proc" %}
+    <div class="wizard nav-screen-wizard">
+      {% for label in "Parámetros,Previsualización,Ejecución,Resultado"|split:"," %}
+      <div class="wizard-step pending"><span class="wizard-step-dot">{{ forloop.counter }}</span><span class="wizard-step-label">{{ label }}</span></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="status-banner">
+      <svg class="icon"><use href="#i-wrench"/></svg>
+      <p>{% if view.kind == "proc" %}Pantalla de proceso: parámetros → ejecución → resultado.{% else %}Tablero / reporte: filtros, visualización y exportación.{% endif %}<span>Todavía no tiene funcionalidad propia: se construye cuando se confirme su Historia de Usuario.</span></p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

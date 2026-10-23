@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load static %}
+{% load static core_extras %}
 
 {% block title %}GELETRIC · Inicio{% endblock %}
 
@@ -21,7 +21,7 @@
     {% for s in stats %}
     <div class="card stat-card">
       <div class="stat-top">
-        <img class="stat-icon-img" src="{% static s.icon_tile %}" alt="">
+        {% module_icon s.mod "tile" "stat-icon-img" %}
         <div class="stat-value">{{ s.value }}</div>
       </div>
       <div class="stat-label">{{ s.label }}</div>
@@ -67,7 +67,7 @@
       <div class="list">
         {% for t in tasks %}
         <div class="list-row">
-          <img class="list-icon-img" src="{% static t.icon_tile %}" alt="">
+          {% module_icon t.mod "tile" "list-icon-img" %}
           <div class="list-body"><div class="list-title">{{ t.title }}</div><div class="list-sub">{{ t.module_name }}</div></div>
           <div class="list-due{% if t.urgent %} urgent{% endif %}">{{ t.due }}</div>
         </div>
@@ -79,7 +79,7 @@
       <div class="list">
         {% for n in news %}
         <div class="list-row">
-          <img class="list-icon-img" src="{% static n.icon_tile %}" alt="">
+          {% module_icon n.mod "tile" "list-icon-img" %}
           <div class="list-body"><div class="list-title">{{ n.title }}</div><div class="list-sub">{{ n.module_name }}</div></div>
           <div class="list-due">{{ n.when }}</div>
         </div>
@@ -91,7 +91,7 @@
       <div class="quick-grid">
         {% for m in quick_access %}
         <a class="quick-item" href="{% url 'core:module_detail' slug=m.slug %}">
-          <img class="quick-icon-img" src="{% static m.icon_tile %}" alt="">
+          {% module_icon m "tile" "quick-icon-img" %}
           <span>{{ m.name }}</span>
         </a>
         {% endfor %}

@@ -49,6 +49,33 @@ def inline_icon(static_path, css_class=""):
     return mark_safe(svg)
 
 
+
+@register.simple_tag
+def module_icon(module, variant="tile", css_class=""):
+    """Ícono de un módulo del mapa (core/nav_map.py), con o sin arte propio.
+
+    variant="white": para el sidebar — el SVG blanco de diseño inline
+    (recoloreable, ver inline_icon) o, si el módulo todavía no tiene arte,
+    el ícono del sprite.
+    variant="tile": para superficies claras (Inicio, encabezados) — el
+    <img> del tile de diseño o, si no hay, un tile armado con CSS
+    (.mod-sprite-tile) con el ícono del sprite en el color del módulo."""
+    if not module:
+        return ""
+    sprite = module.get("icon_sprite")
+    if variant == "white":
+        if module.get("icon_white"):
+            return inline_icon(module["icon_white"], css_class)
+        return format_html('<svg class="icon {}"><use href="#{}"/></svg>', css_class, sprite)
+    if module.get("icon_tile"):
+        from django.templatetags.static import static
+        return format_html('<img class="{}" src="{}" alt="">', css_class, static(module["icon_tile"]))
+    return format_html(
+        '<span class="{} mod-sprite-tile" style="--tile-color:var(--mod-{})">'
+        '<svg class="icon"><use href="#{}"/></svg></span>',
+        css_class, module.get("color", "gray"), sprite,
+    )
+
 # ---------- {% cell %} / {% endcell %}: celda de tabla responsive ----------
 # Las tablas con clase .table-responsive (dashboard.css) necesitan que cada
 # <td> lleve un atributo data-th con el nombre de su columna, para que en
@@ -165,3 +192,9 @@ def zip_lists(headers, row):
         {% endfor %}
     """
     return zip(headers, row)
+
+
+@register.filter
+def split(value, sep=","):
+    """"a,b,c"|split:"," → ["a", "b", "c"] (para listas fijas en templates)."""
+    return [p.strip() for p in str(value).split(sep)]

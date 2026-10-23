@@ -5,13 +5,14 @@
 
 {% block content %}
 <div class="module-view">
-  <a class="back-btn" href="{% url 'core:module_detail' slug='asociados' %}"><svg class="icon"><use href="#i-arrowleft"/></svg>Volver a Asociados y servicios</a>
-
-  <div class="module-head">
-    <span class="asoc-menu-icon asoc-menu-icon-lg"><svg class="icon"><use href="#i-idcard"/></svg></span>
+  <div class="module-head nav-screen-head">
+    {% module_icon module "tile" "module-head-icon-img" %}
     <div>
-      <h2>Listado de asociados</h2>
+      <h2>Asociados</h2>
       <p>Buscá un asociado para ver su ficha completa.</p>
+    </div>
+    <div class="nav-screen-actions">
+      <a class="btn btn-primary btn-sm" href="{% url 'core:asociado_alta' %}"><svg class="icon"><use href="#i-plus"/></svg>Nuevo asociado</a>
     </div>
   </div>
 
@@ -96,11 +97,12 @@
       <table class="ficha-table table-responsive table-accordion asociados-table">
         <thead>
           <tr>
-            <th>Nombre</th>
             <th>N° asociado</th>
-            <th>Estado</th>
-            <th>Localidad</th>
-            <th>Dirección</th>
+            <th>N° usuario</th>
+            <th>Nombre</th>
+            <th>DNI / CUIT</th>
+            <th>Dirección real / fiscal</th>
+            <th>Email</th>
             <th></th>
           </tr>
         </thead>
@@ -111,11 +113,12 @@
               <span class="row-summary-title">{{ a.nombre_completo }}</span>
               <span class="row-summary-meta">N° {{ a.numero_asociado }}<span class="row-summary-dot">·</span><span class="status-pill{% if a.estado == "Activo" %} good{% else %} neutral{% endif %}">{{ a.estado }}</span></span>
             {% endrowsummary %}
-            {% cell "Nombre" "accordion-hide" %}{{ a.nombre_completo }}{% endcell %}
             {% cell "N° asociado" "accordion-hide" %}{{ a.numero_asociado }}{% endcell %}
-            {% cell "Estado" "accordion-hide" %}<span class="status-pill{% if a.estado == "Activo" %} good{% else %} neutral{% endif %}">{{ a.estado }}</span>{% endcell %}
-            {% cell "Localidad" %}{{ a.localidad }}{% endcell %}
-            {% cell "Dirección" %}{{ a.direccion }}{% endcell %}
+            {% cell "N° usuario" %}{{ a.numero_usuario }}{% endcell %}
+            {% cell "Nombre" "accordion-hide" %}{{ a.nombre_completo }}{% endcell %}
+            {% cell "DNI / CUIT" %}{{ a.documento }}{% endcell %}
+            {% cell "Dirección real / fiscal" %}{{ a.direccion }}{% endcell %}
+            {% cell "Email" %}{{ a.email }}{% endcell %}
             {% cell "Acciones" %}<a class="table-link" href="{% url 'core:asociado_ficha' numero_asociado=a.numero_asociado %}">Ver ficha<svg class="icon"><use href="#i-chevright"/></svg></a>{% endcell %}
           </tr>
           {% endfor %}

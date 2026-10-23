@@ -48,13 +48,49 @@
       }
     });
     scrim.addEventListener("click", close);
-    sidebar.querySelectorAll(".nav-item").forEach(function (el) {
+    // Solo los links cierran el cajón en mobile: los botones de módulo
+    // con submenú (.nav-toggle) abren su lista y el cajón sigue abierto.
+    sidebar.querySelectorAll("a.nav-item, .nav-sub-item").forEach(function (el) {
       el.addEventListener("click", close);
     });
 
     // sincroniza aria-pressed con la clase que base.html ya aplicó
     // (o no) antes de este script correr.
     menuBtn.setAttribute("aria-pressed", sidebar.classList.contains("pinned") ? "true" : "false");
+  }
+
+  // ---------- submenús del sidebar (mapa de sitio v3) ----------
+  // Cada módulo con submenú es un <button class="nav-toggle"> seguido de
+  // su <ul class="nav-sub">. Acordeón: abrir uno cierra el resto, para
+  // que con 12 módulos la lista no se vuelva larguísima (punto abierto
+  // del mapa v3). El del módulo actual ya viene abierto desde el
+  // servidor (base.html). Con el sidebar colapsado (solo íconos) no hay
+  // dónde mostrar el submenú, así que el click primero lo expande
+  // ("pinea", igual que el botón hamburguesa) y después abre la lista.
+  function initSidebarSubmenus() {
+    var sidebar = document.getElementById("sidebar");
+    var menuBtn = document.getElementById("menu-btn");
+    if (!sidebar) return;
+    var deskQuery = window.matchMedia("(min-width: 861px)");
+    var modules = Array.prototype.slice.call(sidebar.querySelectorAll("[data-nav-module]"));
+
+    function setOpen(mod, open) {
+      var btn = mod.querySelector(".nav-toggle");
+      var list = mod.querySelector(".nav-sub");
+      mod.classList.toggle("open", open);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      list.hidden = !open;
+    }
+
+    modules.forEach(function (mod) {
+      mod.querySelector(".nav-toggle").addEventListener("click", function () {
+        var collapsed = deskQuery.matches && !sidebar.classList.contains("pinned");
+        if (collapsed && menuBtn) menuBtn.click();
+        var willOpen = collapsed ? true : !mod.classList.contains("open");
+        modules.forEach(function (other) { if (other !== mod) setOpen(other, false); });
+        setOpen(mod, willOpen);
+      });
+    });
   }
 
   // ---------- globito de nombre para los íconos (sidebar colapsado) ----------
@@ -623,6 +659,7 @@
   document.addEventListener("DOMContentLoaded", function () {
     initSidebarToggle();
     initSidebarTooltips();
+    initSidebarSubmenus();
     initSidebarSearch();
     initTopbarSearch();
     initBrandPicker();
